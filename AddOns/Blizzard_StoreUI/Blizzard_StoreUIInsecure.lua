@@ -55,7 +55,8 @@ if (InGlue()) then
 				VASCharacterGUID = guid;
 
 				C_StoreGlue.ClearVASProductReady();
-		    	if (GetServerName() ~= realmName or StoreFrame_IsVASTransferProduct(productID)) then
+				if (GetServerName() ~= realmName or StoreFrame_IsVASTransferProduct(productID)) then
+					CharacterSelect_SetAutoSwitchRealm(true);
 			    	C_StoreGlue.ChangeRealmByCharacterGUID(guid);
 		    	else
 			    	UpdateCharacterList(true);
