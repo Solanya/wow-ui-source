@@ -35,6 +35,7 @@ if (InGlue()) then
 			local data = GlueDialog.data;
 
 			if (GetServerName() ~= data.realmName) then
+				CharacterSelect_SetAutoSwitchRealm(true);
 				C_StoreGlue.ChangeRealmByCharacterGUID(data.guid);
 			else
 				UpdateCharacterList(true);
@@ -57,7 +58,7 @@ if (InGlue()) then
 				C_StoreGlue.ClearVASProductReady();
 				if (GetServerName() ~= realmName or StoreFrame_IsVASTransferProduct(productID)) then
 					CharacterSelect_SetAutoSwitchRealm(true);
-			    	C_StoreGlue.ChangeRealmByCharacterGUID(guid);
+					C_StoreGlue.ChangeRealmByCharacterGUID(guid);
 		    	else
 			    	UpdateCharacterList(true);
 		    	end
