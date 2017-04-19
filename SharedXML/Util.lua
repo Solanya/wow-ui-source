@@ -123,6 +123,10 @@ function GetTexCoordsForRole(role)
 	end
 end
 
+function ReloadUI()
+	C_UI.Reload();
+end
+
 function tDeleteItem(table, item)
 	local index = 1;
 	while table[index] do
@@ -322,6 +326,15 @@ end
 
 function FrameDeltaLerp(startValue, endValue, amount)
 	return DeltaLerp(startValue, endValue, amount, GetTickTime());
+end
+
+function GetNavigationButtonEnabledStates(count, index)
+	-- Returns indicate whether navigation for "previous" and "next" should be enabled, respectively.
+	if count > 1 then
+		return index > 1, index < count;
+	end
+
+	return false, false;
 end
 
 ----------------------------------
@@ -813,5 +826,21 @@ function CallbackRegistryBaseMixin:TriggerEvent(event, ...)
 		for callback in pairs(registry) do
 			callback(event, ...);
 		end
+	end
+end
+
+-- Currency Overflow --
+function WillCurrencyRewardOverflow(currencyID, rewardQuantity)
+	local name, quantity, icon, earnedThisWeek, weeklyMax, maxQuantity, discovered, rarity = GetCurrencyInfo(currencyID);
+	return maxQuantity > 0 and rewardQuantity + quantity > maxQuantity;
+end
+
+function GetColorForCurrencyReward(currencyID, rewardQuantity, defaultColor)
+	if WillCurrencyRewardOverflow(currencyID, rewardQuantity) then
+		return RED_FONT_COLOR;
+	elseif defaultColor then
+		return defaultColor;
+	else
+		return HIGHLIGHT_FONT_COLOR;
 	end
 end

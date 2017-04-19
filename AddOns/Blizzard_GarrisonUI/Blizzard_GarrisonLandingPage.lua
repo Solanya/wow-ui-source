@@ -81,6 +81,8 @@ end
 function GarrisonLandingPageMixin:OnShow()
 	self:UpdateUIToGarrisonType();
 	PlaySound("UI_Garrison_GarrisonReport_Open");
+
+	self:RegisterEvent("GARRISON_HIDE_LANDING_PAGE")
 end
 
 function GarrisonLandingPageMixin:OnHide()
@@ -90,6 +92,8 @@ function GarrisonLandingPageMixin:OnHide()
 	StaticPopup_Hide("CONFIRM_FOLLOWER_ABILITY_UPGRADE");
 	GarrisonBonusAreaTooltip:Hide();
 	self.abilityCountersForMechanicTypes = nil;
+
+	self:UnregisterEvent("GARRISON_HIDE_LANDING_PAGE")
 end
 
 function GarrisonLandingPageMixin:GetFollowerList()
@@ -98,6 +102,12 @@ end
 
 function GarrisonLandingPageMixin:GetShipFollowerList()
 	return self.ShipFollowerList;
+end
+
+function GarrisonLandingPageMixin:OnEvent(event)
+	if (event == "GARRISON_HIDE_LANDING_PAGE") then
+		self:Hide();
+	end
 end
 
 
@@ -514,11 +524,14 @@ function GarrisonLandingPageReportList_UpdateAvailable()
 			for id, reward in pairs(item.rewards) do
 				local Reward = button.Rewards[index];
 				Reward.Quantity:Hide();
+				Reward.Quantity:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB());
 				Reward.bonusAbilityID = nil;
 				Reward.bonusAbilityDuration = nil;
 				Reward.bonusAbilityIcon = nil;
 				Reward.bonusAbilityName = nil;
 				Reward.bonusAbilityDescription = nil;
+				Reward.currencyID = nil;
+				Reward.currencyQuantity = nil;
 				if (reward.itemID) then
 					Reward.itemID = reward.itemID;
 					local _, _, quality, _, _, _, _, _, _, itemTexture = GetItemInfo(reward.itemID);
@@ -544,7 +557,11 @@ function GarrisonLandingPageReportList_UpdateAvailable()
 						else
 							local _, _, currencyTexture = GetCurrencyInfo(reward.currencyID);
 							Reward.tooltip = BreakUpLargeNumbers(reward.quantity).." |T"..currencyTexture..":0:0:0:-1|t ";
+							Reward.currencyID = reward.currencyID;
+							Reward.currencyQuantity = reward.quantity;
 							Reward.Quantity:SetText(reward.quantity);
+							local currencyColor = GetColorForCurrencyReward(reward.currencyID, reward.quantity);
+							Reward.Quantity:SetTextColor(currencyColor:GetRGB());
 							Reward.Quantity:Show();
 						end
 					elseif (reward.bonusAbilityID) then
@@ -825,7 +842,11 @@ function GarrisonLandingPageReportMissionReward_OnEnter(self)
 			GameTooltip:SetText(self.title);
 		end
 		if (self.tooltip) then
-			GameTooltip:AddLine(self.tooltip, 1, 1, 1, true);
+			local color = HIGHLIGHT_FONT_COLOR;
+			if (self.currencyID) then
+				color = GetColorForCurrencyReward(self.currencyID, self.currencyQuantity);
+			end
+			GameTooltip:AddLine(self.tooltip, color.r, color.g, color.b, true);
 		end
 		GameTooltip:Show();
 	end
