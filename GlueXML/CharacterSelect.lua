@@ -1214,9 +1214,9 @@ function CharacterSelect_AllowedToEnterWorld()
         return false;
     end
 
-    if (vasServiceInProgress) then
+    --[[if (vasServiceInProgress) then
         return false;
-    end
+    end]]
 
     return true;
 end
