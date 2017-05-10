@@ -4,7 +4,6 @@ end
 
 function LocalizeFrames()
 	-- Put all locale specific UI adjustments here
-
-	-- Random name button is for English only
-	ALLOW_RANDOM_NAME_BUTTON = true;
+	RealmCharactersSort:SetWidth(RealmCharactersSort:GetWidth() + 8);
+	RealmLoadSort:SetWidth(RealmLoadSort:GetWidth() - 8);
 end
