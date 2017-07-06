@@ -1819,21 +1819,6 @@ function StoreFrame_OnHide(self)
 	PlaySound(SOUNDKIT.UI_IG_STORE_WINDOW_CLOSE_BUTTON);
 end
 
-function StoreFrame_OnHide(self)
-	if (VASReady) then
-		StoreVASValidationFrame_OnVasProductComplete(StoreVASValidationFrame);
-	end
-	self:SetAttribute("isshown", false);
-	-- TODO: Fix so will only hide if Store showed the preview frame
-	Outbound.HidePreviewFrame();
-	if ( not IsOnGlueScreen() ) then
-		Outbound.UpdateMicroButtons();
-	end
-
-	StoreVASValidationFrame:Hide();
-	PlaySound("UI_igStore_WindowClose_Button");
-end
-
 function StoreFrame_OnMouseWheel(self, value)
 	if ( value > 0 ) then
 		if ( self.PrevPageButton:IsShown() and self.PrevPageButton:IsEnabled() ) then
