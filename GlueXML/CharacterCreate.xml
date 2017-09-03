@@ -138,10 +138,6 @@
 
 	<Script file="CharacterCreate.lua"/>
 
-	<AnimationGroup name="RequirementPulseAnimationGroupTemplate" parentKey="RequirementPulse" setToFinalAlpha="true" looping="bounce" virtual="true">
-		<Alpha childKey="Title" duration="1" order="1" fromAlpha="1" toAlpha="0.2"/>
-	</AnimationGroup>
-
 	<Frame name="GlowyBorderFrame" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND" textureSubLevel="-1">
@@ -726,7 +722,7 @@
 				self.text:SetPoint("CENTER", 0, 0);
 			</OnMouseUp>
 			<OnClick>
-				PlaySound("gsCharacterCreationClass");
+				PlaySound(SOUNDKIT.GS_CHARACTER_CREATION_CLASS);
 				CharCreateSelectCustomizationType(self:GetID());
 			</OnClick>
 		</Scripts>
@@ -1230,7 +1226,7 @@
 								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
 							</OnLoad>
 							<OnClick>
-								PlaySound("igInventoryRotateCharacter");
+								PlaySound(SOUNDKIT.IG_INVENTORY_ROTATE_CHARACTER);
 							</OnClick>
 							<OnUpdate>
 								CharacterCreateRotateLeft_OnUpdate(self);
@@ -1262,7 +1258,7 @@
 								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
 							</OnLoad>
 							<OnClick>
-								PlaySound("igInventoryRotateCharacter");
+								PlaySound(SOUNDKIT.IG_INVENTORY_ROTATE_CHARACTER);
 							</OnClick>
 							<OnUpdate>
 								CharacterCreateRotateRight_OnUpdate(self);
@@ -1364,9 +1360,6 @@
 								<AbsValue val="16"/>
 							</EdgeSize>
 						</Backdrop>
-						<Animations>
-							<AnimationGroup inherits="RequirementPulseAnimationGroupTemplate"/>
-						</Animations>
 						<Scripts>
 							<OnEscapePressed function="CharacterCreate_Back"/>
 							<OnEnterPressed function="CharacterCreate_TryForward"/>
@@ -1793,7 +1786,7 @@
 						</Layers>
 						<Scripts>
 							<OnClick>
-								PlaySound("igMainMenuOptionCheckBoxOn");
+								PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 								if ( self.infoShown ) then
 									self.infoShown = nil;
 									CharCreateMoreInfoButtonTopGlow:Hide();
@@ -1938,9 +1931,6 @@
 										</FontString>
 									</Layer>
 								</Layers>
-								<Animations>
-									<AnimationGroup inherits="RequirementPulseAnimationGroupTemplate"/>
-								</Animations>
 							</Frame>
 
 							<Frame name="CharCreateSelectFactionFrame" hidden="true">
@@ -1982,9 +1972,6 @@
 										</Anchors>
 									</CheckButton>
 								</Frames>
-								<Animations>
-									<AnimationGroup inherits="RequirementPulseAnimationGroupTemplate"/>
-								</Animations>
 							</Frame>
 
 							<CheckButton name="CharacterCreateAlternateFormTop" hidden="true">
@@ -2013,7 +2000,7 @@
 										CharacterCreateAlternateFormTop:SetChecked(true);
 										CharacterCreateAlternateFormBottom:SetChecked(false);
 										if ( IsViewingAlteredForm() ) then
-											PlaySound("gsCharacterCreationClass");
+											PlaySound(SOUNDKIT.GS_CHARACTER_CREATION_CLASS);
 											SetViewingAlteredForm(false);
 											CharCreate_PrepPreviewModels(true);
 											CharCreate_ResetFeaturesDisplay();
@@ -2061,7 +2048,7 @@
 										CharacterCreateAlternateFormTop:SetChecked(false);
 										CharacterCreateAlternateFormBottom:SetChecked(true);
 										if ( not IsViewingAlteredForm() ) then
-											PlaySound("gsCharacterCreationClass");
+											PlaySound(SOUNDKIT.GS_CHARACTER_CREATION_CLASS);
 											SetViewingAlteredForm(true);
 											CharCreate_PrepPreviewModels(true);
 											CharCreate_ResetFeaturesDisplay();
@@ -2208,7 +2195,7 @@
 								self.pushedTexture:SetTexCoord(0, 0.5, 0, 1.0);
 							</OnLoad>
 							<OnClick>
-								PlaySound("gsCharacterCreationClass");
+								PlaySound(SOUNDKIT.GS_CHARACTER_CREATION_CLASS);
 								if ( GetSelectedSex() ~= SEX_MALE ) then
 									SetCharacterGender(SEX_MALE);
 								else
@@ -2231,7 +2218,7 @@
 								self.pushedTexture:SetTexCoord(0.5, 1.0, 0, 1.0);
 							</OnLoad>
 							<OnClick>
-								PlaySound("gsCharacterCreationClass");
+								PlaySound(SOUNDKIT.GS_CHARACTER_CREATION_CLASS);
 								if ( GetSelectedSex() ~= SEX_FEMALE ) then
 									SetCharacterGender(SEX_FEMALE);
 								else
@@ -2349,7 +2336,7 @@
 						<Scripts>
 							<OnClick>
 								CharacterTemplateConfirmDialog:Hide();
-								PlaySound("gsTitleOptionExit");
+								PlaySound(SOUNDKIT.GS_TITLE_OPTION_EXIT);
 							</OnClick>
 							<OnUpdate>
 								GlueParent_DeathKnightButtonSwap(self);

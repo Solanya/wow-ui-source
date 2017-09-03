@@ -167,7 +167,7 @@ function ContainerFrame_OnHide(self)
 
 	if ( self:GetID() == KEYRING_CONTAINER ) then
 		UpdateMicroButtons();
-		PlaySound("KeyRingClose");
+		PlaySound(SOUNDKIT.KEY_RING_CLOSE);
 	else
 		if ( self:GetID() == 0 and BagHelpBox.wasShown ) then
 			BagHelpBox.wasShown = nil;
@@ -176,7 +176,7 @@ function ContainerFrame_OnHide(self)
 			BagHelpBox.owner = nil;
 			BagHelpBox:Hide();
 		end
-		PlaySound("igBackPackClose");
+		PlaySound(SOUNDKIT.IG_BACKPACK_CLOSE);
 	end
 
 	if ArtifactRelicHelpBox:IsShown() and ArtifactRelicHelpBox.owner == self then
@@ -249,9 +249,9 @@ function ContainerFrame_OnShow(self)
 	ContainerFrame1.bagsShown = ContainerFrame1.bagsShown + 1;
 	if ( self:GetID() == KEYRING_CONTAINER ) then
 		UpdateMicroButtons();
-		PlaySound("KeyRingOpen");
+		PlaySound(SOUNDKIT.KEY_RING_OPEN);
 	else
-		PlaySound("igBackPackOpen");
+		PlaySound(SOUNDKIT.IG_BACKPACK_OPEN);
 	end
  	ContainerFrame_Update(self);
 	
@@ -983,9 +983,9 @@ function ContainerFrame_GetExtendedPriceString(itemButton, isEquipped, quantity)
 		local currencyTexture, currencyQuantity, currencyName = GetContainerItemPurchaseCurrency(bag, slot, i, isEquipped);
 		if ( currencyName ) then
 			if ( itemsString ) then
-				itemsString = itemsString .. ", |TInterface\\Icons\\"..currencyTexture..":0:0:0:-1|t ".. format(CURRENCY_QUANTITY_TEMPLATE, (currencyQuantity or 0) * quantity, currencyName);
+				itemsString = itemsString .. ", |T"..currencyTexture..":0:0:0:-1|t ".. format(CURRENCY_QUANTITY_TEMPLATE, (currencyQuantity or 0) * quantity, currencyName);
 			else
-				itemsString = " |TInterface\\Icons\\"..currencyTexture..":0:0:0:-1|t "..format(CURRENCY_QUANTITY_TEMPLATE, (currencyQuantity or 0) * quantity, currencyName);
+				itemsString = " |T"..currencyTexture..":0:0:0:-1|t "..format(CURRENCY_QUANTITY_TEMPLATE, (currencyQuantity or 0) * quantity, currencyName);
 			end
 		end
 	end

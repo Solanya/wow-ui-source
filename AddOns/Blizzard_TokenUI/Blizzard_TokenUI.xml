@@ -225,10 +225,10 @@
 					</OnLoad>
 					<OnClick>
 						if ( self:GetChecked() ) then
-							PlaySound("igMainMenuOptionCheckBoxOn");
+							PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 							SetCurrencyUnused(TokenFrame.selectedID, 1);
 						else
-							PlaySound("igMainMenuOptionCheckBoxOff");
+							PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 							SetCurrencyUnused(TokenFrame.selectedID, 0);
 						end
 						TokenFrame_Update();
@@ -264,10 +264,10 @@
 								self:SetChecked(false);
 								return;
 							end
-							PlaySound("igMainMenuOptionCheckBoxOn");
+							PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 							SetCurrencyBackpack(TokenFrame.selectedID, 1);
 						else
-							PlaySound("igMainMenuOptionCheckBoxOff");
+							PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 							SetCurrencyBackpack(TokenFrame.selectedID, 0);
 						end
 						TokenFrame_Update();
@@ -304,21 +304,19 @@
 		</Backdrop>
 		<Scripts>
 			<OnShow>
-				PlaySound("igCharacterInfoOpen");
+				PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 			</OnShow>
 			<OnHide>
-				PlaySound("igCharacterInfoClose");
+				PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 			</OnHide>
 		</Scripts>
 	</Frame>
-	<Button name="BackpackTokenTemplate" hidden="true" virtual="true">
-		<Size>
-			<AbsDimension x="50" y="12"/>
-		</Size>
+	<Button name="BackpackTokenTemplate" parentArray="Tokens" hidden="true" virtual="true">
+		<Size x="50" y="12"/>
 		<Layers>
 			<Layer level="ARTWORK">
 				<FontString name="$parentCount" inherits="GameFontHighlightSmall" justifyH="RIGHT" parentKey="count">
-					<Size x="38" y="10"/>
+					<Size x="42" y="10"/>
 					<Anchors>
 						<Anchor point="TOPLEFT">
 							<Offset x="0" y="0"/>

@@ -1,14 +1,14 @@
 GroupMembersDataProviderMixin = CreateFromMixins(MapCanvasDataProviderMixin);
 
-local SIZE_DIVIDEND = 13;
-
 function GroupMembersDataProviderMixin:OnAdded(mapCanvas)
 	MapCanvasDataProviderMixin.OnAdded(self, mapCanvas);
 	self:GetMap():SetPinTemplateType("GroupMembersPinTemplate", "UnitPositionFrame");
 	-- a single permanent pin
 	local pin = self:GetMap():AcquirePin("GroupMembersPinTemplate");
+	pin:SetTransformFlags(self:GetTransformFlags());
 	pin:SetPosition(0.5, 0.5);
-	pin:Show();
+	pin:SetNeedsPeriodicUpdate(false);
+	pin:SetShouldShowUnits("player", false);
 	self.pin = pin;
 end
 
@@ -34,32 +34,35 @@ end
 
 function GroupMembersDataProviderMixin:RefreshAllData(fromOnShow)
 	self.pin:SetSize(self:GetMap():DenormalizeHorizontalSize(1.0), self:GetMap():DenormalizeVerticalSize(1.0));
-
-	local memberCount = 0;
-	local unitBase;
-	if IsInRaid() then
-		memberCount = MAX_RAID_MEMBERS;
-		unitBase = "raid";
-	elseif IsInGroup() then
-		memberCount = MAX_PARTY_MEMBERS;
-		unitBase = "party";
+	local pinSize = 13 / FlightMapFrame.ScrollContainer:GetCanvasScale();
+	if self.pinSize ~= pinSize then
+		self.pin:SetPinSize("party", pinSize);
+		self.pin:SetPinSize("raid", pinSize);
+		self.pinSize = pinSize;
 	end
 
-	self.pin:ClearUnits();
-	local scale = FlightMapFrame.ScrollContainer:GetCanvasScale();
-	local size = SIZE_DIVIDEND / scale;
-	for i = 1, memberCount do
-		local unit = unitBase..i;
-		if UnitExists(unit) and not UnitIsUnit(unit, "player") then
-			local atlas = UnitInSubgroup(unit) and "WhiteCircle-RaidBlips" or "WhiteDotCircle-RaidBlips";
-			local class = select(2, UnitClass(unit));
-			local r, g, b = GetClassColor(class);
-			self.pin:AddUnitAtlas(unit, atlas, size, size, r, g, b, 1);
+	self.pin:UpdatePlayerPins();
+	self.pin:UpdateTooltips(GameTooltip);
+end
+
+function GroupMembersDataProviderMixin:SetDynamicFrameStratas(zoomedOut, zoomedIn, threshold)
+	self.zoomedOutStrata = zoomedOut;
+	self.zoomedInStrata = zoomedIn;
+	self.frameStrataThreshold = threshold or 0.5;
+end
+
+function GroupMembersDataProviderMixin:OnCanvasScaleChanged()
+	-- We change the frame strata so that players will show above other flight map icons while zoomed in
+	-- but not while zoomed out
+	if self.frameStrataThreshold then
+		if self:GetMap():GetCanvasZoomPercent() >= self.frameStrataThreshold then
+			self.pin:SetFrameStrata(self.zoomedInStrata);
+		else
+			self.pin:SetFrameStrata(self.zoomedOutStrata);
 		end
 	end
-	self.pin:FinalizeUnits();
-
-	self.pin:UpdateTooltips(GameTooltip);
+	
+	self.pin:ApplyCurrentPosition();
 end
 
 --[[ Group Members Pin ]]--
@@ -68,5 +71,4 @@ GroupMembersPinMixin = CreateFromMixins(MapCanvasPinMixin);
 function GroupMembersPinMixin:OnLoad()
 	UnitPositionFrameMixin.OnLoad(self);
 	self:SetAlphaLimits(1.0, 1.0, 1.0);
-	self:SetScalingLimits(0, 1, 1);
 end

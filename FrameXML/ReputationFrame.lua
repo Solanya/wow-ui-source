@@ -199,7 +199,7 @@ function ReputationFrame_Update(showLFGPulse)
 			if ( isCapped ) then
 				factionRow.rolloverText = nil;
 			else
-				factionRow.rolloverText = HIGHLIGHT_FONT_COLOR_CODE.." "..format(REPUTATION_PROGRESS_FORMAT, barValue, barMax)..FONT_COLOR_CODE_CLOSE;
+				factionRow.rolloverText = HIGHLIGHT_FONT_COLOR_CODE.." "..format(REPUTATION_PROGRESS_FORMAT, BreakUpLargeNumbers(barValue), BreakUpLargeNumbers(barMax))..FONT_COLOR_CODE_CLOSE;
 			end
 			factionBar:SetFillStyle("STANDARD_NO_RANGE_FILL");
 			factionBar:SetMinMaxValues(0, barMax);
@@ -288,11 +288,11 @@ end
 
 function ReputationBar_OnClick(self)
 	if ( ReputationDetailFrame:IsShown() and (GetSelectedFaction() == self.index) ) then
-		PlaySound("igCharacterInfoClose");
+		PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 		ReputationDetailFrame:Hide();
 	else
 		if ( self.hasRep ) then
-			PlaySound("igCharacterInfoOpen");
+			PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 			SetSelectedFaction(self.index);
 			ReputationDetailFrame:Show();
 			ReputationFrame_Update();
@@ -301,7 +301,7 @@ function ReputationBar_OnClick(self)
 end
 
 function ReputationBarLFGBonusRepButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	ReputationBar_SetLFBonus(self.factionID);
 end
 

@@ -125,6 +125,11 @@ retain("Vector3D_Add");
 retain("Vector3D_ScaleBy");
 retain("Vector3D_CalculateNormalFromYawPitch");
 retain("DeltaLerp");
+retain("SOUNDKIT");
+retain("GetScreenWidth");
+retain("GetScreenHeight");
+retain("GetPhysicalScreenSize");
+retain("ConvertPixelsToUI");
 
 --For auth challenge
 take("C_AuthChallenge");
@@ -303,6 +308,7 @@ take("BLIZZARD_STORE_VAS_ERROR_DISALLOWED_SOURCE_ACCOUNT");
 take("BLIZZARD_STORE_VAS_ERROR_DISALLOWED_DESTINATION_ACCOUNT");
 take("BLIZZARD_STORE_VAS_ERROR_LOWER_BOX_LEVEL");
 take("BLIZZARD_STORE_VAS_ERROR_MAX_CHARACTERS_ON_SERVER");
+take("BLIZZARD_STORE_VAS_ERROR_BOOSTED_TOO_RECENTLY");
 take("BLIZZARD_STORE_VAS_ERROR_OTHER");
 take("BLIZZARD_STORE_VAS_ERROR_LABEL");
 take("BLIZZARD_STORE_DISCLAIMER_FACTION_CHANGE");

@@ -1,7 +1,6 @@
 EVENT_TRACE_EVENT_HEIGHT = 16;
 EVENT_TRACE_MAX_ENTRIES = 1000;
 
-DEBUGLOCALS_LEVEL = 4;
 local _normalFontColor = { 1, .82, 0, 1 };
 
 EVENT_TRACE_SYSTEM_TIMES = {};
@@ -488,189 +487,6 @@ function EventTraceFrameEventHideButton_OnClick (button)
 	EventTraceFrame_Update();
 end
 
-local ERROR_FORMAT = [[|cffffd200Message:|r|cffffffff %s|r
-|cffffd200Time:|r|cffffffff %s|r
-|cffffd200Count:|r|cffffffff %s|r
-|cffffd200Stack:|r|cffffffff %s|r
-|cffffd200Locals:|r|cffffffff %s|r]];
-
-local WARNING_AS_ERROR_FORMAT = [[|cffffd200Message:|r|cffffffff %s|r
-|cffffd200Time:|r|cffffffff %s|r
-|cffffd200Count:|r|cffffffff %s|r]];
-
-local WARNING_FORMAT = "Lua Warning:\n"..WARNING_AS_ERROR_FORMAT;
-
-local INDEX_ORDER_FORMAT = "%d / %d"
-
-local _ScriptErrorsFrame;
-
-function ScriptErrorsFrame_OnLoad (self)
-	self.title:SetText(LUA_ERROR);
-	self:RegisterForDrag("LeftButton");
-	self.seen = {};
-	self.order = {};
-	self.count = {};
-	self.messages = {};
-	self.times = {};
-	self.locals = {};
-	self.warnType = {};
-	_ScriptErrorsFrame = self;
-end
-
-function ScriptErrorsFrame_OnShow (self)
-	ScriptErrorsFrame_Update();
-end
-
-function ScriptErrorsFrame_OnError (message, warnType, keepHidden)
-	local stack = debugstack(DEBUGLOCALS_LEVEL);
-
-	local messageStack = message..stack; -- Fix me later
-
-	if ( _ScriptErrorsFrame ) then
-		local index = _ScriptErrorsFrame.seen[messageStack];
-		if ( index ) then
-			_ScriptErrorsFrame.count[index] = _ScriptErrorsFrame.count[index] + 1;
-			_ScriptErrorsFrame.messages[index] = message;
-			_ScriptErrorsFrame.times[index] = date();
-			_ScriptErrorsFrame.locals[index] = debuglocals(DEBUGLOCALS_LEVEL);
-		else
-			tinsert(_ScriptErrorsFrame.order, stack);
-			index = #_ScriptErrorsFrame.order;
-			_ScriptErrorsFrame.count[index] = 1;
-			_ScriptErrorsFrame.messages[index] = message;
-			_ScriptErrorsFrame.times[index] = date();
-			_ScriptErrorsFrame.seen[messageStack] = index;
-			_ScriptErrorsFrame.locals[index] = debuglocals(DEBUGLOCALS_LEVEL);
-			_ScriptErrorsFrame.warnType[index] = (warnType or false); --Use false instead of nil
-		end
-
-		if ( not _ScriptErrorsFrame:IsShown() and not keepHidden ) then
-			_ScriptErrorsFrame.index = index;
-			_ScriptErrorsFrame:Show();
-		else
-			ScriptErrorsFrame_Update();
-		end
-	end
-end
-
-function ScriptErrorsFrame_Update ()
-	local editBox = ScriptErrorsFrameScrollFrameText;
-	local index = _ScriptErrorsFrame.index;
-	if ( not index or not _ScriptErrorsFrame.order[index] ) then
-		index = #_ScriptErrorsFrame.order;
-		_ScriptErrorsFrame.index = index;
-	end
-
-	if ( index == 0 ) then
-		editBox:SetText("");
-		ScriptErrorsFrame_UpdateButtons();
-		return;
-	end
-
-	local warnType = _ScriptErrorsFrame.warnType[index];
-
-	local text;
-	if ( warnType ) then
-		local warnFormat = WARNING_FORMAT;
-		if ( warnType == LUA_WARNING_TREAT_AS_ERROR ) then
-			warnFormat = WARNING_AS_ERROR_FORMAT;
-		end
-
-		text = string.format(
-			warnFormat,
-			_ScriptErrorsFrame.messages[index],
-			_ScriptErrorsFrame.times[index],
-			_ScriptErrorsFrame.count[index]
-		);
-	else
-		text = string.format(
-			ERROR_FORMAT,
-			_ScriptErrorsFrame.messages[index],
-			_ScriptErrorsFrame.times[index],
-			_ScriptErrorsFrame.count[index],
-			_ScriptErrorsFrame.order[index],
-			_ScriptErrorsFrame.locals[index] or "<none>"
-		);
-	end
-
-	local parent = editBox:GetParent();
-	local prevText = editBox.text;
-	editBox.text = text;
-	if ( prevText ~= text ) then
-		editBox:SetText(text);
-		editBox:HighlightText(0);
-		editBox:SetCursorPosition(0);
-	else
-		ScrollingEdit_OnTextChanged(editBox, parent);
-	end
-	parent:SetVerticalScroll(0);
-
-	ScriptErrorsFrame_UpdateButtons();
-end
-
-function ScriptErrorsFrame_UpdateButtons ()
-	local index = _ScriptErrorsFrame.index;
-	local numErrors = #_ScriptErrorsFrame.order;
-	if ( index == 0 ) then
-		_ScriptErrorsFrame.next:Disable();
-		_ScriptErrorsFrame.previous:Disable();
-	else
-		if ( numErrors == 1 ) then
-			_ScriptErrorsFrame.next:Disable();
-			_ScriptErrorsFrame.previous:Disable();
-		elseif ( index == 1 ) then
-			_ScriptErrorsFrame.next:Enable();
-			_ScriptErrorsFrame.previous:Disable();
-		elseif ( index == numErrors ) then
-			_ScriptErrorsFrame.next:Disable();
-			_ScriptErrorsFrame.previous:Enable();
-		else
-			_ScriptErrorsFrame.next:Enable();
-			_ScriptErrorsFrame.previous:Enable();
-		end
-	end
-
-	_ScriptErrorsFrame.indexLabel:SetText(string.format(INDEX_ORDER_FORMAT, index, numErrors));
-end
-
-function ScriptErrorsFrame_DeleteError (index)
-	if ( _ScriptErrorsFrame.order[index] ) then
-		_ScriptErrorsFrame.seen[_ScriptErrorsFrame.messages[index] .. _ScriptErrorsFrame.order[index]] = nil;
-		tremove(_ScriptErrorsFrame.order, index);
-		tremove(_ScriptErrorsFrame.messages, index);
-		tremove(_ScriptErrorsFrame.times, index);
-		tremove(_ScriptErrorsFrame.count, index);
-		tremove(_ScriptErrorsFrame.warnType, index);
-	end
-end
-
-function ScriptErrorsFrameButton_OnClick (self)
-	local id = self:GetID();
-
-
-	if ( id == 1 ) then
-		_ScriptErrorsFrame.index = _ScriptErrorsFrame.index + 1;
-	else
-		_ScriptErrorsFrame.index = _ScriptErrorsFrame.index - 1;
-	end
-
-	ScriptErrorsFrame_Update();
-end
-
---[[  function ScriptErrorsFrameDelete_OnClick (self);
-	local index = _ScriptErrorsFrame.index;
-	ScriptErrorsFrame_DeleteError(index);
-
-	local numErrors = #_ScriptErrorsFrame.order;
-	if ( numErrors == 0 ) then
-		_ScriptErrorsFrame.index = 0;
-	elseif ( index > numErrors ) then
-		_ScriptErrorsFrame.index = numErrors;
-	end
-
-	ScriptErrorsFrame_Update();
-end ]]
-
 function DebugTooltip_OnLoad(self)
 	self:SetFrameLevel(self:GetFrameLevel() + 2);
 	self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
@@ -713,18 +529,66 @@ function FrameStackTooltip_OnTooltipSetFrameStack(self, highlightFrame)
 	end
 end
 
-function FrameStackTooltip_Toggle (showHidden, showRegions)
-	local tooltip = _G["FrameStackTooltip"];
+function FrameStackTooltip_Toggle (showHidden, showRegions, showAnchors)
+	local tooltip = FrameStackTooltip;
 	if ( tooltip:IsVisible() ) then
 		tooltip:Hide();
 		FrameStackHighlight:Hide();
 	else
 		tooltip:SetOwner(UIParent, "ANCHOR_NONE");
-		tooltip:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -CONTAINER_OFFSET_X - 13, CONTAINER_OFFSET_Y);
+		tooltip:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -(CONTAINER_OFFSET_X or 0) - 13, (CONTAINER_OFFSET_Y or 0));
 		tooltip.default = 1;
 		tooltip.showRegions = showRegions;
 		tooltip.showHidden = showHidden;
+		tooltip.showAnchors = showAnchors;
 		tooltip:SetFrameStack(showHidden, showRegions);
+	end
+end
+
+local function AnchorHighlight(frame, highlight, relativePoint)
+	highlight:SetAllPoints(frame);
+	highlight:Show();
+
+	if highlight.AnchorPoint then
+		if relativePoint then
+			highlight.AnchorPoint:ClearAllPoints();
+			highlight.AnchorPoint:SetPoint("CENTER", highlight, relativePoint);
+			highlight.AnchorPoint:Show();
+		else
+			highlight.AnchorPoint:Hide();
+		end
+	end
+end
+
+AnchorHighlightMixin = {};
+
+function AnchorHighlightMixin:RetrieveAnchorHighlight(pointIndex)
+	if not self.AnchorHighlights then
+		CreateFrame("FRAME", "FrameStackAnchorHighlightTemplate1", self, "FrameStackAnchorHighlightTemplate");
+	end
+	
+	while pointIndex > #self.AnchorHighlights do
+		CreateFrame("FRAME", "FrameStackAnchorHighlightTemplate"..(#self.AnchorHighlights + 1), self, "FrameStackAnchorHighlightTemplate");
+	end
+	
+	return self.AnchorHighlights[pointIndex];
+end
+
+function AnchorHighlightMixin:HighlightFrame(baseFrame, showAnchors)
+	AnchorHighlight(baseFrame, self);
+	
+	local pointIndex = 1;
+	if (showAnchors) then
+		while pointIndex <= baseFrame:GetNumPoints() do
+			local _, anchorFrame, anchorRelativePoint = baseFrame:GetPoint(pointIndex);
+			AnchorHighlight(anchorFrame, self:RetrieveAnchorHighlight(pointIndex), anchorRelativePoint);
+			pointIndex = pointIndex + 1;
+		end
+	end
+	
+	while self.AnchorHighlights and self.AnchorHighlights[pointIndex] do
+		self.AnchorHighlights[pointIndex]:Hide();
+		pointIndex = pointIndex + 1;
 	end
 end
 
@@ -746,14 +610,13 @@ function FrameStackTooltip_OnUpdate (self, elapsed)
 	if ( _timeSinceLast <= 0 or highlightIndexChanged ~= 0 ) then
 		_timeSinceLast = FRAMESTACK_UPDATE_TIME;
 		local highlightFrame = self:SetFrameStack(self.showHidden, self.showRegions, highlightIndexChanged);
-
-		FrameStackHighlight:ClearAllPoints();
-		if (highlightFrame) then
-			FrameStackHighlight:SetPoint("BOTTOMLEFT", highlightFrame);
-			FrameStackHighlight:SetPoint("TOPRIGHT", highlightFrame);
-			FrameStackHighlight:Show();
-		else
-			FrameStackHighlight:Hide();
+		if highlightFrame then
+			FrameStackHighlight:HighlightFrame(highlightFrame, self.showAnchors);
+			
+			if ( IsControlKeyDown() ) then
+				TableAttributeDisplay:InspectTable(highlightFrame);
+				TableAttributeDisplay:Show();
+			end
 		end
 	end
 end
@@ -778,6 +641,12 @@ function FrameStackTooltip_OnShow (self)
 			self:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -20, -20);
 		end
 	end
+end
+
+function FrameStackTooltip_OnHide(self)
+end
+
+function FrameStackTooltip_OnTooltipCleared(self)
 end
 
 FrameStackTooltip_OnEnter = FrameStackTooltip_OnShow;

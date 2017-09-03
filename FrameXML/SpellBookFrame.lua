@@ -99,6 +99,7 @@ function SpellBookFrame_OnLoad(self)
 	self:RegisterEvent("USE_GLYPH");
 	self:RegisterEvent("CANCEL_GLYPH_CAST");
 	self:RegisterEvent("ACTIVATE_GLYPH");
+	self:RegisterEvent("CURRENT_SPELL_CAST_CHANGED");
 
 	SpellBookFrame.bookType = BOOKTYPE_SPELL;
 	-- Init page nums
@@ -132,6 +133,11 @@ function SpellBookFrame_OnEvent(self, event, ...)
 			if ( GetNumSpellTabs() < SpellBookFrame.selectedSkillLine ) then
 				SpellBookFrame.selectedSkillLine = 2;
 			end
+			SpellBookFrame_Update();
+		end
+	elseif ( event == "CURRENT_SPELL_CAST_CHANGED" ) then
+		if (self.castingGlyphSlot and not IsCastingGlyph()) then
+			SpellBookFrame.castingGlyphSlot = nil;
 			SpellBookFrame_Update();
 		end
 	elseif ( event == "LEARNED_SPELL_IN_TAB" ) then
@@ -348,21 +354,21 @@ end
 
 function SpellBookFrame_PlayOpenSound()
 	if ( SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
-		PlaySound("igSpellBookOpen");
+		PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN);
 	elseif ( SpellBookFrame.bookType == BOOKTYPE_PET ) then
 		-- Need to change to pet book open sound
-		PlaySound("igAbilityOpen");
+		PlaySound(SOUNDKIT.IG_ABILITY_OPEN);
 	else
-		PlaySound("igSpellBookOpen");
+		PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN);
 	end
 end
 
 function SpellBookFrame_PlayCloseSound()
 	if ( SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
-		PlaySound("igSpellBookClose");
+		PlaySound(SOUNDKIT.IG_SPELLBOOK_CLOSE);
 	else
 		-- Need to change to pet book close sound
-		PlaySound("igAbilityClose");
+		PlaySound(SOUNDKIT.IG_ABILITY_CLOSE);
 	end
 end
 
@@ -428,7 +434,7 @@ function SpellButton_OnEvent(self, event, ...)
 				-- We're part of a flyout
 				SpellBookFrame_UpdateSpells();
 			else
-				onActionBar = C_ActionBar.HasSpellActionButtons(actionID);
+				onActionBar = C_ActionBar.IsOnBarOrSpecialBar(actionID);
 			end
 		elseif ( slotType == "FLYOUT" ) then
 			onActionBar = C_ActionBar.HasFlyoutActionButtons(actionID);
@@ -656,7 +662,7 @@ function SpellButton_UpdateButton(self)
 	if ( not SpellBookFrame.selectedSkillLine ) then
 		SpellBookFrame.selectedSkillLine = 2;
 	end
-	local _, _, offset, numSlots, _, offSpecID = GetSpellTabInfo(SpellBookFrame.selectedSkillLine);
+	local _, _, offset, numSlots, _, offSpecID, shouldHide, specID = GetSpellTabInfo(SpellBookFrame.selectedSkillLine);
 	SpellBookFrame.selectedSkillLineNumSlots = numSlots;
 	SpellBookFrame.selectedSkillLineOffset = offset;
 	local isOffSpec = (offSpecID ~= 0) and (SpellBookFrame.bookType == BOOKTYPE_SPELL);
@@ -756,14 +762,12 @@ function SpellButton_UpdateButton(self)
 		self.FlyoutArrow:Hide();
 	end
 	
-	local specs =  {GetSpecsForSpell(slot, SpellBookFrame.bookType)};
-	local specName = table.concat(specs, PLAYER_LIST_DELIMITER);
 	if ( subSpellName == "" ) then
-		if ( IsTalentSpell(slot, SpellBookFrame.bookType) ) then
+		if ( IsTalentSpell(slot, SpellBookFrame.bookType, specID) ) then
 			if ( isPassive ) then
-				subSpellName = TALENT_PASSIVE
+				subSpellName = TALENT_PASSIVE;
 			else
-				subSpellName = TALENT
+				subSpellName = TALENT;
 			end
 		elseif ( isPassive ) then
 			subSpellName = SPELL_PASSIVE;
@@ -808,7 +812,7 @@ function SpellButton_UpdateButton(self)
 				self.AbilityHighlightAnim:Stop();
 				self.AbilityHighlight:Hide();
 			end
-			if (HasAttachedGlyph(actionID)) then
+			if (HasAttachedGlyph(actionID) or SpellBookFrame.castingGlyphSlot == slot) then
 				self.GlyphIcon:Show();
 			else
 				self.GlyphIcon:Hide();
@@ -825,7 +829,7 @@ function SpellButton_UpdateButton(self)
 				if ( slotType == "SPELL" ) then
 					-- If the spell is passive we never show the highlight.  Otherwise, check if there are any action
 					-- buttons with this spell.
-					self.SpellHighlightTexture:SetShown(not isPassive and not C_ActionBar.HasSpellActionButtons(actionID));
+					self.SpellHighlightTexture:SetShown(not isPassive and not C_ActionBar.IsOnBarOrSpecialBar(actionID));
 				elseif ( slotType == "FLYOUT" ) then
 					self.SpellHighlightTexture:SetShown(not C_ActionBar.HasFlyoutActionButtons(actionID));
 				elseif ( slotType == "PETACTION" ) then
@@ -929,11 +933,11 @@ end
 function SpellBookPrevPageButton_OnClick()
 	local pageNum = SpellBook_GetCurrentPage() - 1;
 	if ( SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 		SPELLBOOK_PAGENUMBERS[SpellBookFrame.selectedSkillLine] = pageNum;
 	else
 		-- Need to change to pet book pageturn sound
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 		SPELLBOOK_PAGENUMBERS[SpellBookFrame.bookType] = pageNum;
 	end
 	SpellBookFrame_Update();
@@ -942,11 +946,11 @@ end
 function SpellBookNextPageButton_OnClick()
 	local pageNum = SpellBook_GetCurrentPage() + 1;
 	if ( SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 		SPELLBOOK_PAGENUMBERS[SpellBookFrame.selectedSkillLine] = pageNum;
 	else
 		-- Need to change to pet book pageturn sound
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 		SPELLBOOK_PAGENUMBERS[SpellBookFrame.bookType] = pageNum;
 	end
 	SpellBookFrame_Update();
@@ -975,7 +979,7 @@ end
 function SpellBookSkillLineTab_OnClick(self)
 	local id = self:GetID();
 	if ( SpellBookFrame.selectedSkillLine ~= id ) then
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 		SpellBookFrame.selectedSkillLine = id;
 		SpellBookFrame_Update();
 	else
@@ -1077,6 +1081,7 @@ function SpellBookFrame_OpenToPageForSlot(slot, reason)
 			button.GlyphIcon:Show();
 			button.GlyphTranslation:Show();
 			button.GlyphActivateAnim:Play();
+			SpellBookFrame.castingGlyphSlot = slot;
 		end
 	end
 end
@@ -1137,7 +1142,7 @@ function SpellBookFrame_UpdateSkillLineTabs()
 		local skillLineTab = _G["SpellBookSkillLineTab"..i];
 		local prevTab = _G["SpellBookSkillLineTab"..i-1];
 		if ( i <= numSkillLineTabs and SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
-			local name, texture, _, _, isGuild, offSpecID, shouldHide = GetSpellTabInfo(i);
+			local name, texture, _, _, isGuild, offSpecID, shouldHide, specID = GetSpellTabInfo(i);
 			
 			if ( shouldHide ) then
 				_G["SpellBookSkillLineTab"..i.."Flash"]:Hide();

@@ -1,5 +1,7 @@
 MAX_NUM_GLUE_DIALOG_BUTTONS = 3;
 
+local QUEUED_GLUE_DIALOGS = {};
+
 GlueDialogTypes = { };
 
 
@@ -228,66 +230,6 @@ GlueDialogTypes["QUEUED_WITH_FCM"] = {
 	end,
 }
 
-GlueDialogTypes["SYSTEM_INCOMPATIBLE_SSE"] = {
-	text = SYSTEM_INCOMPATIBLE_SSE,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("SSE");
-	end
-}
-
-GlueDialogTypes["DEVICE_BLACKLISTED"] = {
-	text = DEVICE_BLACKLISTED,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("DEVICE");
-	end
-}
-
-GlueDialogTypes["FIXEDFUNCTION_UNSUPPORTED"] = {
-	text = FIXEDFUNCTION_UNSUPPORTED,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("SHADERMODEL");
-	end
-}
-
-GlueDialogTypes["DRIVER_BLACKLISTED"] = {
-	text = DRIVER_BLACKLISTED,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("DRIVER");
-	end
-}
-
-GlueDialogTypes["DRIVER_OUTOFDATE"] = {
-	text = DRIVER_OUTOFDATE,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("DRIVER_OOD");
-	end
-}
-
-GlueDialogTypes["SHADER_MODEL_TO_BE_UNSUPPORTED"] = {
-	text = SHADER_MODEL_TO_BE_UNSUPPORTED,
-	button1 = OKAY,
-	html = 1,
-	showAlert = 1,
-	OnAccept = function ()
-		CheckSystemRequirements("SHADERMODEL_TOBEUNSUPPORTED");
-	end
-}
-
 GlueDialogTypes["CHARACTER_BOOST_NO_CHARACTERS_WARNING"] = {
 	text = CHARACTER_BOOST_NO_CHARACTERS_WARNING_DIALOG_TEXT,
 	button1 = CHARACTER_BOOST_NO_CHARACTERS_WARNING_DIALOG_ACCEPT_WARNING,
@@ -333,193 +275,6 @@ GlueDialogTypes["UNLOCK_REVOKED_UPGRADE_CHARACTER"] = {
 	end,
 }
 
---[[
-
-GlueDialogTypes["DISCONNECTED"] = {
-	text = DISCONNECTED,
-	button1 = OKAY,
-	button2 = nil,
-	OnShow = function()
-		VirtualKeypadFrame:Hide();
-		SecurityMatrixLoginFrame:Hide();
-		StatusDialogClick();
-	end,
-}
-
-GlueDialogTypes["PARENTAL_CONTROL"] = {
-	text = AUTH_PARENTAL_CONTROL,
-	button1 = MANAGE_ACCOUNT,
-	button2 = OKAY,
-	OnShow = function()
-		VirtualKeypadFrame:Hide();
-		SecurityMatrixLoginFrame:Hide();
-		StatusDialogClick();
-	end,
-	OnAccept = function()
-		LaunchURL(AUTH_NO_TIME_URL);
-	end,
-	OnCancel = function()
-		StatusDialogClick();
-	end,
-}
-
-GlueDialogTypes["STREAMING_ERROR"] = {
-	text = DISCONNECTED,
-	button1 = DIALOG_HELP_MORE_INFO,
-	button2 = OKAY,
-	OnShow = function()
-		VirtualKeypadFrame:Hide();
-		SecurityMatrixLoginFrame:Hide();
-		StatusDialogClick();
-	end,
-	OnAccept = function()
-		LaunchURL(DISCONNECT_STREAMING_ERROR_URL);
-	end,
-	OnCancel = function()
-		StatusDialogClick();
-	end,
-}
-
-GlueDialogTypes["INVALID_NAME"] = {
-	text = CHAR_CREATE_INVALID_NAME,
-	button1 = OKAY,
-	button2 = nil,
-}
-
-GlueDialogTypes["REALM_LIST_CANCEL"] = {
-	text = "",
-	button1 = CANCEL,
-	button2 = nil,
-	OnAccept = function()
-		StatusDialogClick();
-		local serverName, isPVP, isRP, isDown = GetServerName();
-		if ( not isDown and IsConnectedToServer() ) then
-			SetGlueScreen("charselect");
-		else
-			SetGlueScreen("login");
-		end
-	end,
-}
-
-GlueDialogTypes["QUEUED_WITH_FCM"] = {
-	text = "",
-	button1 = CHANGE_REALM,
-	button2 = QUEUE_FCM_BUTTON,
-	OnAccept = function()
-		RequestRealmList(true);
-	end,
-	OnCancel = function()
-		LaunchURL(QUEUE_FCM_URL)
-	end,
-}
-
-GlueDialogTypes["QUEUED_NORMAL"] = {
-	text = "",
-	button1 = CHANGE_REALM,
-	OnAccept = function()
-		RequestRealmList(true);
-	end,
-}
-
-GlueDialogTypes["OKAY_HTML_EXIT"] = {
-	text = "",
-	button1 = OKAY,
-	button2 = EXIT_GAME,
-	html = 1,
-	OnShow = function()
-		if ( VirtualKeypadFrame:IsShown() ) then
-			VirtualKeypadFrame:Hide();
-			C_Login.DisconnectFromServer();
-		end
-	end,
-	OnAccept = function()
-		StatusDialogClick();
-	end,
-	OnCancel = function()
-		AccountLogin_Exit();
-	end,
-}
-
-GlueDialogTypes["OKAY_WITH_URL"] = {
-	text = "",
-	button1 = HELP,
-	button2 = OKAY,
-	OnAccept = function()
-		LaunchURL(_G[GlueDialog.data]);
-	end,
-	OnCancel = function()
-		StatusDialogClick();
-	end,
-}
-
-GlueDialogTypes["CONNECTION_HELP"] = {
-	text = "",
-	button1 = HELP,
-	button2 = OKAY,
-	OnShow = function()
-		VirtualKeypadFrame:Hide();
-		StatusDialogClick();
-	end,
-	OnAccept = function()
-		AccountLoginUI:Hide();
-		ConnectionHelpFrame:Show();
-	end,
-}
-
-GlueDialogTypes["CONNECTION_HELP_HTML"] = {
-	text = "",
-	button1 = HELP,
-	button2 = OKAY,
-	html = 1,
-	OnShow = function()
-		VirtualKeypadFrame:Hide();
-		StatusDialogClick();
-	end,
-	OnAccept = function()
-		AccountLoginUI:Hide();
-		ConnectionHelpFrame:Show();
-	end,
-}
-
-GlueDialogTypes["CLIENT_ACCOUNT_MISMATCH"] = {
-	button1 = RETURN_TO_LOGIN,
-	button2 = EXIT_GAME,
-	html = 1,
-	OnAccept = function()
-		SetGlueScreen("login");
-	end,
-	OnCancel = function()
-		PlaySound("gsTitleQuit");
-		QuitGame();
-	end,
-}
-
-GlueDialogTypes["CLIENT_TRIAL"] = {
-	text = CLIENT_TRIAL,
-	button1 = RETURN_TO_LOGIN,
-	button2 = EXIT_GAME,
-	html = 1,
-	OnAccept = function()
-		SetGlueScreen("login");
-	end,
-	OnCancel = function()
-		PlaySound("gsTitleQuit");
-		QuitGame();
-	end,
-}
-
-GlueDialogTypes["REALMLIST_NOT_CONNECTED_TO_BATTLENET"] = {
-	text = REALMLIST_NOT_CONNECTED_TO_BATTLENET,
-	button1 = OKAY,
-	button2 = CANCEL,
-	OnAccept = function()
-		DisconnectFromServer();
-		SetGlueScreen("login");
-	end,
-}
-
---]]
-
 GlueDialogTypes["BOOST_NOT_RECOMMEND_SPEC_WARNING"] = {
 	text = BOOST_NOT_RECOMMEND_SPEC_WARNING,
 	button1 = OKAY,
@@ -541,6 +296,26 @@ GlueDialogTypes["LEGION_PURCHASE_READY"] = {
 		C_Login.DisconnectFromServer();
 	end,
 }
+
+GlueDialogTypes["CONFIGURATION_WARNING"] = {
+	button1 = OKAY,
+	OnAccept = function()
+		C_ConfigurationWarnings.SetConfigurationWarningSeen(GlueDialog.data.configurationWarning);
+	end,
+	showAlert = 1,
+	html = 1,
+}
+
+function GlueDialog_Queue(which, text, data)
+	table.insert(QUEUED_GLUE_DIALOGS, {which = which, text = text, data = data});
+end
+
+function GlueDialog_CheckQueuedDialogs()
+	if #QUEUED_GLUE_DIALOGS > 0 and not GlueDialog:IsShown() then
+		GlueDialog_Show(QUEUED_GLUE_DIALOGS[1].which, QUEUED_GLUE_DIALOGS[1].text, QUEUED_GLUE_DIALOGS[1].data);
+		table.remove(QUEUED_GLUE_DIALOGS, 1);
+	end
+end
 
 function GlueDialog_Show(which, text, data)
 	local dialogInfo = GlueDialogTypes[which];
@@ -764,7 +539,7 @@ function GlueDialog_OnShow(self)
 end
 
 function GlueDialog_OnHide()
---	PlaySound("igMainMenuClose");
+--	PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE);
 end
 
 function GlueDialog_OnClick(self, button, down)
@@ -786,7 +561,7 @@ function GlueDialog_OnClick(self, button, down)
 			OnAlt();
 		end
 	end
-	PlaySound("gsTitleOptionOK");
+	PlaySound(SOUNDKIT.GS_TITLE_OPTION_OK);
 end
 
 function GlueDialog_OnKeyDown(self, key)

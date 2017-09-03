@@ -41,6 +41,8 @@ function BattlefieldMinimap_OnLoad (self)
 	self:RegisterEvent("WORLD_MAP_UPDATE");
 	self:RegisterEvent("NEW_WMO_CHUNK");
 
+	self.flagsPool = CreateFramePool("FRAME", self, "BattlefieldMapFlagTemplate");
+
 	BattlefieldMinimap.updateTimer = 0;
 
 	BattlefieldMinimapUnitPositionFrame:SetMouseOverUnitExcluded("player", true);
@@ -51,7 +53,7 @@ function BattlefieldMinimap_OnLoad (self)
 end
 
 function BattlefieldMinimap_OnShow(self)
-	PlaySound("igQuestLogOpen");
+	PlaySound(SOUNDKIT.IG_QUEST_LOG_OPEN);
 	SetMapToCurrentZone();
 	BattlefieldMinimap_Update();
 	BattlefieldMinimap_UpdateOpacity(BattlefieldMinimapOptions.opacity);
@@ -59,7 +61,7 @@ function BattlefieldMinimap_OnShow(self)
 end
 
 function BattlefieldMinimap_OnHide(self)
-	PlaySound("igQuestLogClose");
+	PlaySound(SOUNDKIT.IG_QUEST_LOG_CLOSE);
 	BattlefieldMinimapTab:Hide();
 	BattlefieldMinimap_ClearTextures();
 	CloseDropDownMenus();
@@ -327,25 +329,18 @@ function BattlefieldMinimap_OnUpdate(self, elapsed)
 		wipe(BG_VEHICLES);
 	else
 		-- Position flags
-		local numFlags = GetNumBattlefieldFlagPositions();
-		for i=1, NUM_WORLDMAP_FLAGS do
-			local flagFrameName = "BattlefieldMinimapFlag"..i;
-			local flagFrame = _G[flagFrameName];
-			if ( i <= numFlags ) then
-				local flagX, flagY, flagToken = GetBattlefieldFlagPosition(i);
-				local flagTexture = _G[flagFrameName.."Texture"];
-				if ( flagX == 0 and flagY == 0 ) then
-					flagFrame:Hide();
-				else
-					flagX = flagX * BattlefieldMinimap:GetWidth();
-					flagY = -flagY * BattlefieldMinimap:GetHeight();
-					flagFrame:SetPoint("CENTER", "BattlefieldMinimap", "TOPLEFT", flagX, flagY);
-					local flagTexture = _G[flagFrameName.."Texture"];
-					flagTexture:SetTexture("Interface\\WorldStateFrame\\"..flagToken);
-					flagFrame:Show();
-				end
-			else
-				flagFrame:Hide();
+		self.flagsPool:ReleaseAll();
+		for flagIndex = 1, GetNumBattlefieldFlagPositions() do
+			local flagX, flagY, flagToken = GetBattlefieldFlagPosition(flagIndex);
+			if flagX ~= 0 or flagY ~= 0 then
+				local flagFrame = self.flagsPool:Acquire();
+
+				flagX = flagX * self:GetWidth();
+				flagY = -flagY * self:GetHeight();
+				flagFrame:SetPoint("CENTER", self, "TOPLEFT", flagX, flagY);
+
+				flagFrame.Texture:SetTexture("Interface\\WorldStateFrame\\"..flagToken);
+				flagFrame:Show();
 			end
 		end
 
@@ -431,7 +426,7 @@ function BattlefieldMinimap_OnMouseUp(self, button, upInside)
 end
 
 function BattlefieldMinimapTab_OnClick(self, button)
-	PlaySound("UChatScrollButton");
+	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON);
 
 	-- If Rightclick bring up the options menu
 	if ( button == "RightButton" ) then

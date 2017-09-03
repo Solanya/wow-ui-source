@@ -8,17 +8,19 @@ GLUE_SCREENS = {
 };
 
 GLUE_SECONDARY_SCREENS = {
-	["cinematics"] =	{ frame = "CinematicsFrame", 	playMusic = true,	playAmbience = false,	fullScreen = false,	showSound = "gsTitleOptions" },
-	["credits"] = 		{ frame = "CreditsFrame", 		playMusic = false,	playAmbience = false,	fullScreen = true,	showSound = "gsTitleCredits" },
+	["cinematics"] =	{ frame = "CinematicsFrame", 	playMusic = true,	playAmbience = false,	fullScreen = false,	showSound = SOUNDKIT.GS_TITLE_OPTIONS },
+	["credits"] = 		{ frame = "CreditsFrame", 		playMusic = false,	playAmbience = false,	fullScreen = true,	showSound = SOUNDKIT.GS_TITLE_CREDITS },
 	-- Bug 477070 We have some rare race condition crash in the sound engine that happens when the MovieFrame's "showSound" sound plays at the same time the movie audio is starting.
 	-- Removing the showSound from the MovieFrame in attempt to avoid the crash, until we can actually find and fix the bug in the sound engine.
 	["movie"] = 		{ frame = "MovieFrame", 		playMusic = false,	playAmbience = false,	fullScreen = true },
-	["options"] = 		{ frame = "VideoOptionsFrame",	playMusic = true,	playAmbience = false,	fullScreen = false,	showSound = "gsTitleOptions" },
+	["options"] = 		{ frame = "VideoOptionsFrame",	playMusic = true,	playAmbience = false,	fullScreen = false,	showSound = SOUNDKIT.GS_TITLE_OPTIONS },
 };
 
 SEX_NONE = 1;
 SEX_MALE = 2;
 SEX_FEMALE = 3;
+
+ACCOUNT_SUSPENDED_ERROR_CODE = 53;
 
 local function OnDisplaySizeChanged(self)
 	local width = GetScreenWidth();
@@ -60,6 +62,8 @@ function GlueParent_OnLoad(self)
 	self:RegisterEvent("OPEN_STATUS_DIALOG");
 	self:RegisterEvent("REALM_LIST_UPDATED");
 	self:RegisterEvent("DISPLAY_SIZE_CHANGED");
+	self:RegisterEvent("LUA_WARNING");
+	self:RegisterEvent("CONFIGURATION_WARNING");
 
 	OnDisplaySizeChanged(self);
 end
@@ -83,6 +87,8 @@ function GlueParent_OnEvent(self, event, ...)
 		RealmList_Update();
 	elseif ( event == "DISPLAY_SIZE_CHANGED" ) then
 		OnDisplaySizeChanged(self);
+	elseif ( event == "LUA_WARNING" ) then
+		HandleLuaWarning(...);
 	end
 end
 
@@ -184,6 +190,18 @@ function GlueParent_UpdateDialogs()
 				hasURL = true;
 			end
 
+			if ( errorCategory == "BNET" and errorID == ACCOUNT_SUSPENDED_ERROR_CODE ) then
+				local remaining = C_Login.GetAccountSuspensionRemainingTime();
+				if (remaining) then
+					local days = floor(remaining / 86400);
+					local hours = floor((remaining / 3600) - (days * 24));
+					local minutes = floor((remaining / 60) - (days * 1440) - (hours * 60));
+					localizedString = localizedString:format(" "..ACCOUNT_SUSPENSION_EXPIRATION:format(days, hours, minutes));
+				else
+					localizedString = localizedString:format("");
+				end
+			end
+
 			--Append the errorCodeString
 			if ( isHTML ) then
 				--Pretty hacky...
@@ -240,7 +258,7 @@ function GlueParent_EnsureValidScreen()
 			"changingFrom", currentScreen,
 			"changingTo", bestScreen);
 
-		GlueParent_SetScreen(GlueParent_GetBestScreen());
+		GlueParent_SetScreen(bestScreen);
 	end
 end
 
@@ -616,6 +634,11 @@ end
 -- Utils
 -- =============================================================
 
+function HideUIPanel(self)
+	-- Glue specific implementation of this function, doesn't need to leverage FrameXML data.
+	self:Hide();
+end
+
 function IsKioskGlueEnabled()
 	return IsKioskModeEnabled() and not IsCompetitiveModeEnabled();
 end
@@ -633,7 +656,7 @@ function SetExpansionLogo(texture, expansionLevel)
 end
 
 function UpgradeAccount()
-	PlaySound("gsLoginNewAccount");
+	PlaySound(SOUNDKIT.GS_LOGIN_NEW_ACCOUNT);
 	LoadURLIndex(2);
 end
 
@@ -662,53 +685,13 @@ function MinutesToTime(mins, hideDays)
 	return time;
 end
 
-function CheckSystemRequirements( previousCheck )
-	if ( not previousCheck  ) then
-		if ( not IsCPUSupported() ) then
-			GlueDialog_Show("SYSTEM_INCOMPATIBLE_SSE");
-			return;
+function CheckSystemRequirements(includeSeenWarnings)
+	local configWarnings = C_ConfigurationWarnings.GetConfigurationWarnings(includeSeenWarnings);
+	for i, warning in ipairs(configWarnings) do
+		local text = C_ConfigurationWarnings.GetConfigurationWarningString(warning);
+		if text then
+			GlueDialog_Queue("CONFIGURATION_WARNING", text, { configurationWarning = warning });
 		end
-		previousCheck = nil;
-	end
-
-	if ( not previousCheck or previousCheck == "SSE" ) then
-		if ( not IsShaderModelSupported() ) then
-			GlueDialog_Show("FIXEDFUNCTION_UNSUPPORTED");
-			return;
-		end
-		previousCheck = nil;
-	end
-
-	if ( not previousCheck or previousCheck == "SHADERMODEL" ) then
-		if ( VideoDeviceState() == 1 ) then
-			GlueDialog_Show("DEVICE_BLACKLISTED");
-			return;
-		end
-		previousCheck = nil;
-	end
-
-	if ( not previousCheck or previousCheck == "DEVICE" ) then
-		if ( VideoDriverState() == 2 ) then
-			GlueDialog_Show("DRIVER_OUTOFDATE");
-			return;
-		end
-		previousCheck = nil;
-	end
-
-	if ( not previousCheck or previousCheck == "DRIVER_OOD" ) then
-		if ( VideoDriverState() == 1 ) then
-			GlueDialog_Show("DRIVER_BLACKLISTED");
-			return;
-		end
-		previousCheck = nil;
-	end
-
-	if ( not previousCheck or previousCheck == "DRIVER" ) then
-		if ( not WillShaderModelBeSupported() ) then
-			GlueDialog_Show("SHADER_MODEL_TO_BE_UNSUPPORTED");
-			return;
-		end
-		previousCheck = nil;
 	end
 end
 
@@ -728,6 +711,10 @@ function GMError(...)
 	if ( IsGMClient() ) then
 		error(...);
 	end
+end
+
+function OnExcessiveErrors()
+	-- Glue Implementation, no-op.
 end
 
 SecureMixin = Mixin;

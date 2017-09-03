@@ -103,6 +103,7 @@ local QuestTaskInfoLua =
 			{
 				{ Name = "mapID", Type = "number", Nilable = false },
 				{ Name = "parentMapID", Type = "number", Nilable = true },
+				{ Name = "transformFlags", Type = "MapTransform", Nilable = true },
 			},
 
 			Returns =
@@ -135,8 +136,23 @@ local QuestTaskInfoLua =
 		},
 	},
 
+	Events =
+	{
+	},
+
 	Tables =
 	{
+		{
+			Name = "MapTransform",
+			Type = "Enumeration",
+			NumValues = 1,
+			MinValue = 1,
+			MaxValue = 1,
+			Fields =
+			{
+				{ Name = "IsForFlightMap", Type = "MapTransform", EnumValue = 0 },
+			},
+		},
 		{
 			Name = "TaskPOIData",
 			Type = "Structure",

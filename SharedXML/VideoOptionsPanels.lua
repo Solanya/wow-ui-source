@@ -592,9 +592,9 @@ end
 
 function Display_RaidSettingsEnabled_CheckButton_OnClick(self)
 	if ( self:GetChecked() ) then
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	else
-		PlaySound("igMainMenuOptionCheckBoxOff");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 	end
 	if ( self.cvar ) then
 		BlizzardOptionsPanel_CheckButton_OnClick(self);
@@ -950,6 +950,12 @@ function Advanced_OnLoad (self)
 		_G[name .. "StereoHeader"]:Hide();
 		_G[name .. "StereoHeaderUnderline"]:Hide();
 	end
+	if ( IsMacClient() ) then
+		Advanced_BufferingDropDown:Hide();
+		Advanced_LagDropDown:Hide();
+		Advanced_HardwareCursorDropDown:Hide();
+		Advanced_MultisampleAntiAliasingDropDown:SetPoint("TOPLEFT", Advanced_DisplayHeaderUnderline, "BOTTOMLEFT", 120, -4);
+	end
 end
 
 --
@@ -971,9 +977,9 @@ end
 
 function NetworkOptionsPanel_CheckButton_OnClick(self)
 	if ( self:GetChecked() ) then
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	else
-		PlaySound("igMainMenuOptionCheckBoxOff");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 	end
 	BlizzardOptionsPanel_CheckButton_OnClick(self);
 	if ( self.cvar ) then

@@ -163,11 +163,11 @@ function TargetFrame_OnEvent (self, event, ...)
 
 		if ( UnitExists(self.unit) and not IsReplacingUnit()) then
 			if ( UnitIsEnemy(self.unit, "player") ) then
-				PlaySound("igCreatureAggroSelect");
+				PlaySound(SOUNDKIT.IG_CREATURE_AGGRO_SELECT);
 			elseif ( UnitIsFriend("player", self.unit) ) then
-				PlaySound("igCharacterNPCSelect");
+				PlaySound(SOUNDKIT.IG_CHARACTER_NPC_SELECT);
 			else
-				PlaySound("igCreatureNeutralSelect");
+				PlaySound(SOUNDKIT.IG_CREATURE_NEUTRAL_SELECT);
 			end
 		end
 	elseif ( event == "INSTANCE_ENCOUNTER_ENGAGE_UNIT" ) then
@@ -249,7 +249,7 @@ function TargetFrame_OnVariablesLoaded()
 end
 
 function TargetFrame_OnHide (self)
-	PlaySound("INTERFACESOUND_LOSTTARGETUNIT");
+	PlaySound(SOUNDKIT.INTERFACE_SOUND_LOST_TARGET_UNIT);
 	CloseDropDownMenus();
 end
 
@@ -475,6 +475,17 @@ end
 
 local largeBuffList = {};
 local largeDebuffList = {};
+local function ShouldAuraBeLarge(caster)
+	if not caster then
+		return false;
+	end
+	
+	for token, value in pairs(PLAYER_UNITS) do
+		if UnitIsUnit(caster, token) or UnitIsOwnerOrControllerOfUnit(token, caster) then
+			return value;
+		end
+	end
+end
 
 function TargetFrame_UpdateAuras (self)
 	local frame, frameName;
@@ -526,9 +537,8 @@ function TargetFrame_UpdateAuras (self)
                 end
 
                 -- set the buff to be big if the buff is cast by the player or his pet
-                largeBuffList[i] = PLAYER_UNITS[caster];
-
-                numBuffs = numBuffs + 1;
+				numBuffs = numBuffs + 1;
+                largeBuffList[numBuffs] = ShouldAuraBeLarge(caster);
 
                 frame:ClearAllPoints();
                 frame:Show();
@@ -597,9 +607,8 @@ function TargetFrame_UpdateAuras (self)
 					frameBorder:SetVertexColor(color.r, color.g, color.b);
 
 					-- set the debuff to be big if the buff is cast by the player or his pet
-					largeDebuffList[index] = (PLAYER_UNITS[caster]);
-
 					numDebuffs = numDebuffs + 1;
+					largeDebuffList[numDebuffs] = ShouldAuraBeLarge(caster);
 
 					frame:ClearAllPoints();
 					frame:Show();
@@ -647,7 +656,7 @@ function TargetFrame_UpdateAuras (self)
 end
 
 --
---		Hide debuffs on mobs cast by players other than me and aren�t flagged to show to entire party on nameplates.
+--		Hide debuffs on mobs cast by players other than me and aren't flagged to show to entire party on nameplates.
 --
 function TargetFrame_ShouldShowDebuffs(unit, caster, nameplateShowAll, casterIsAPlayer)
 	if (GetCVarBool("noBuffDebuffFilterOnTarget")) then
@@ -658,7 +667,7 @@ function TargetFrame_ShouldShowDebuffs(unit, caster, nameplateShowAll, casterIsA
 		return true;
 	end
 
-	if (caster and (UnitIsUnit("player", caster) or UnitIsUnit("pet", caster))) then
+	if (caster and (UnitIsUnit("player", caster) or UnitIsOwnerOrControllerOfUnit("player", caster))) then
 		return true;
 	end
 

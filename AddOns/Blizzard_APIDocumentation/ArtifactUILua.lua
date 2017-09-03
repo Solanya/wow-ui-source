@@ -319,6 +319,21 @@ local ArtifactUILua =
 			},
 		},
 		{
+			Name = "GetEquippedArtifactRelicAttuneInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "isAttuned", Type = "bool", Nilable = false },
+				{ Name = "canAttune", Type = "bool", Nilable = false },
+			},
+		},
+		{
 			Name = "GetEquippedArtifactRelicInfo",
 			Type = "Function",
 
@@ -524,6 +539,21 @@ local ArtifactUILua =
 			},
 		},
 		{
+			Name = "GetRelicAttuneInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "isAttuned", Type = "bool", Nilable = false },
+				{ Name = "canAttune", Type = "bool", Nilable = false },
+			},
+		},
+		{
 			Name = "GetRelicInfo",
 			Type = "Function",
 
@@ -569,6 +599,22 @@ local ArtifactUILua =
 			Returns =
 			{
 				{ Name = "lockedReason", Type = "string", Nilable = true },
+			},
+		},
+		{
+			Name = "GetRelicSlotRankInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "currentRank", Type = "number", Nilable = false },
+				{ Name = "canAddTalent", Type = "bool", Nilable = false },
+				{ Name = "artifactLevelRequiredForNextRank", Type = "number", Nilable = true },
 			},
 		},
 		{
@@ -659,6 +705,15 @@ local ArtifactUILua =
 			},
 		},
 		{
+			Name = "IsEquippedArtifactMaxed",
+			Type = "Function",
+
+			Returns =
+			{
+				{ Name = "artifactMaxed", Type = "bool", Nilable = false },
+			},
+		},
+		{
 			Name = "IsMaxedByRulesOrEffect",
 			Type = "Function",
 
@@ -733,6 +788,10 @@ local ArtifactUILua =
 				{ Name = "shouldSuppressForgeRotation", Type = "bool", Nilable = false },
 			},
 		},
+	},
+
+	Events =
+	{
 	},
 
 	Tables =

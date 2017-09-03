@@ -689,10 +689,10 @@ end
 
 function PaperDollFrame_SetArmor(statFrame, unit)
 	local baselineArmor, effectiveArmor, armor, posBuff, negBuff = UnitArmor(unit);
-	PaperDollFrame_SetLabelAndText(statFrame, STAT_ARMOR, effectiveArmor, false, effectiveArmor);
+	PaperDollFrame_SetLabelAndText(statFrame, STAT_ARMOR, BreakUpLargeNumbers(effectiveArmor), false, effectiveArmor);
     local armorReduction = PaperDollFrame_GetArmorReduction(effectiveArmor, UnitEffectiveLevel(unit));
 
-	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..format(PAPERDOLLFRAME_TOOLTIP_FORMAT, ARMOR).." "..string.format("%s", effectiveArmor)..FONT_COLOR_CODE_CLOSE;
+	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..format(PAPERDOLLFRAME_TOOLTIP_FORMAT, ARMOR).." "..BreakUpLargeNumbers(effectiveArmor)..FONT_COLOR_CODE_CLOSE;
 	statFrame.tooltip2 = format(STAT_ARMOR_TOOLTIP, armorReduction);
 	statFrame:Show();
 end
@@ -1147,9 +1147,9 @@ function Mastery_OnEnter(statFrame)
 			GameTooltip:AddSpellByID(masterySpell2);
 		end
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine(format(STAT_MASTERY_TOOLTIP, GetCombatRating(CR_MASTERY), masteryBonus), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
+		GameTooltip:AddLine(format(STAT_MASTERY_TOOLTIP, BreakUpLargeNumbers(GetCombatRating(CR_MASTERY)), masteryBonus), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
 	else
-		GameTooltip:AddLine(format(STAT_MASTERY_TOOLTIP, GetCombatRating(CR_MASTERY), masteryBonus), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
+		GameTooltip:AddLine(format(STAT_MASTERY_TOOLTIP, BreakUpLargeNumbers(GetCombatRating(CR_MASTERY)), masteryBonus), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(STAT_MASTERY_TOOLTIP_NO_TALENT_SPEC, GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b, true);
 	end
@@ -1858,7 +1858,7 @@ end
 
 function PaperDollFrameItemFlyoutButton_OnClick (self)
 	if ( self.location == EQUIPMENTFLYOUT_IGNORESLOT_LOCATION ) then
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 		local slot = EquipmentFlyoutFrame.button;
 		C_EquipmentSet.IgnoreSlotForSave(slot:GetID());
 		slot.ignored = true;
@@ -1866,7 +1866,7 @@ function PaperDollFrameItemFlyoutButton_OnClick (self)
 		EquipmentFlyout_Show(slot);
 		PaperDollEquipmentManagerPaneSaveSet:Enable();
 	elseif ( self.location == EQUIPMENTFLYOUT_UNIGNORESLOT_LOCATION ) then
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 		local slot = EquipmentFlyoutFrame.button;
 		C_EquipmentSet.UnignoreSlotForSave(slot:GetID());
 		slot.ignored = nil;
@@ -2007,7 +2007,7 @@ end
 
 function GearSetButton_OnClick (self, button, down)
 	if ( self.setID ) then
-		PlaySound("igMainMenuOptionCheckBoxOn");		-- inappropriately named, but a good sound.
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);		-- inappropriately named, but a good sound.
 		PaperDollEquipmentManagerPane.selectedSetID = self.setID;
 		-- mark the ignored slots
 		PaperDollFrame_ClearIgnoredSlots();
@@ -2087,7 +2087,7 @@ end
 
 function GearManagerDialogPopup_OnShow (self)
 	GearManagerDialogPopup_AdjustAnchors(self);
-	PlaySound("igCharacterInfoOpen");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 	self.setID = nil;
 	self.isEdit = false;
 	RecalculateGearManagerDialogPopup();
@@ -2350,7 +2350,7 @@ function PaperDollEquipmentManagerPane_OnEvent(self, event, ...)
 	if ( event == "EQUIPMENT_SWAP_FINISHED" ) then
 		local completed, setID = ...;
 		if ( completed ) then
-			PlaySoundKitID(1212); -- plays the equip sound for plate mail
+			PlaySound(SOUNDKIT.PUT_DOWN_SMALL_CHAIN); -- plays the equip sound for plate mail
 			if (self:IsShown()) then
 				self.selectedSetID = setID;
 				PaperDollEquipmentManagerPane_Update();
@@ -2411,6 +2411,7 @@ function PaperDollEquipmentManagerPane_Update(equipmentSetsDirty)
 			PaperDollEquipmentManagerPaneSaveSet:Enable();
 			PaperDollEquipmentManagerPaneEquipSet:Enable();
 		end
+		PaperDollFrame_IgnoreSlotsForSet(setID);
 	else
 		PaperDollEquipmentManagerPaneSaveSet:Disable();
 		PaperDollEquipmentManagerPaneEquipSet:Disable();
@@ -2532,7 +2533,7 @@ end
 function PaperDollEquipmentManagerPaneEquipSet_OnClick (self)
 	local selectedSetID = PaperDollEquipmentManagerPane.selectedSetID;
 	if ( selectedSetID) then
-		PlaySound("igCharacterInfoTab");			-- inappropriately named, but a good sound.
+		PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB);			-- inappropriately named, but a good sound.
 		EquipmentManager_EquipSet(selectedSetID);
 	end
 end
@@ -2638,7 +2639,7 @@ function PaperDollTitlesPane_Update()
 end
 
 function PlayerTitleButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOff");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 	SetCurrentTitle(self.titleId);
 end
 
@@ -2719,7 +2720,7 @@ function PaperDollFrame_SetSidebar(self, index)
 		end
 		_G[PAPERDOLL_SIDEBARS[index].frame]:Show();
 		PaperDollFrame.currentSideBar = _G[PAPERDOLL_SIDEBARS[index].frame];
-		PlaySound("igMainMenuOptionCheckBoxOff");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
 		PaperDollFrame_UpdateSidebarTabs();
 	end
 end

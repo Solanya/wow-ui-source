@@ -39,7 +39,13 @@ function BarberShop_OnShow(self)
 		BarberShopBannerFrame.caption:SetText(BARBERSHOP);
 	end
 	self:ClearAllPoints();
-	self:SetPoint("RIGHT", min(-50, -CONTAINER_OFFSET_X), -50);
+	if ( C_Scenario.IsInScenario() ) then
+		-- Only reason for using CONTAINER_OFFSET_X is to be consistent in spacing from edge
+		self:SetPoint("LEFT", min(50, CONTAINER_OFFSET_X), -50);
+	else
+		self:SetPoint("RIGHT", min(-50, -CONTAINER_OFFSET_X), -50);
+		ObjectiveTrackerFrame:Hide();
+	end
 	if ( HasAlternateForm() ) then
 		local model = BarberShopAltFormFrame;
 		model:Show();
@@ -56,9 +62,7 @@ function BarberShop_OnShow(self)
 		BarberShopAltFormFrame:Hide();
 	end
 
-	PlaySound("BarberShop_Sit");
-	
-	ObjectiveTrackerFrame:Hide();
+	PlaySound(SOUNDKIT.BARBERSHOP_SIT);
 end
 
 function BarberShop_OnHide(self)
@@ -69,7 +73,7 @@ end
 
 function BarberShop_OnEvent(self, event, ...)
 	if(event == "BARBER_SHOP_SUCCESS") then
-		PlaySound("Barbershop_Haircut");
+		PlaySound(SOUNDKIT.BARBERSHOP_HAIRCUT);
 	end
 	BarberShop_Update(self);
 end

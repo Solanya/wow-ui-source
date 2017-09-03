@@ -3,6 +3,8 @@ local OPTION_TABLE_NONE = {};
 BOSS_DEBUFF_SIZE_INCREASE = 9;
 CUF_READY_CHECK_DECAY_TIME = 11;
 DISTANCE_THRESHOLD_SQUARED = 250*250;
+CUF_NAME_SECTION_SIZE = 15;
+CUF_AURA_BOTTOM_OFFSET = 2;
 
 function CompactUnitFrame_OnLoad(self)
 	if ( not self:GetName() ) then
@@ -145,13 +147,14 @@ end
 
 --Externally accessed functions
 function CompactUnitFrame_SetUnit(frame, unit)
-	if ( unit ~= frame.unit ) then
+	if ( unit ~= frame.unit or frame.hideCastbar ~= frame.optionTable.hideCastbar ) then
 		frame.unit = unit;
 		frame.displayedUnit = unit;	--May differ from unit if unit is in a vehicle.
 		frame.inVehicle = false;
 		frame.readyCheckStatus = nil
 		frame.readyCheckDecay = nil;
 		frame.isTanking = nil;
+		frame.hideCastbar = frame.optionTable.hideCastbar;
 		frame.healthBar.healthBackground = nil;
 		frame:SetAttribute("unit", unit);
 		if ( unit ) then
@@ -302,17 +305,17 @@ function CompactUnitFrame_UpdateAll(frame)
 end
 
 function CompactUnitFrame_UpdateInVehicle(frame)
-	local hasValidVehicleUI = UnitHasVehicleUI(frame.unit);
+	local shouldTargetVehicle = UnitHasVehicleUI(frame.unit) and false;--UnitTargetsVehicleInRaidUI(frame.unit);
 	local unitVehicleToken;
-	if ( hasValidVehicleUI ) then
+	if ( shouldTargetVehicle ) then
 		local prefix, id, suffix = string.match(frame.unit, "([^%d]+)([%d]*)(.*)")
 		unitVehicleToken = prefix.."pet"..id..suffix;
 		if ( not UnitExists(unitVehicleToken) ) then
-			hasValidVehicleUI = false;
+			shouldTargetVehicle = false;
 		end
 	end
 	
-	if ( hasValidVehicleUI ) then
+	if ( shouldTargetVehicle ) then
 		if ( not frame.hasValidVehicleDisplay ) then
 			frame.hasValidVehicleDisplay = true;
 			frame.displayedUnit = unitVehicleToken;
@@ -513,7 +516,15 @@ function CompactUnitFrame_UpdateName(frame)
 	if ( not ShouldShowName(frame) ) then
 		frame.name:Hide();
 	else
-		frame.name:SetText(GetUnitName(frame.unit, true));
+		local name = GetUnitName(frame.unit, true);
+		if ( C_Commentator.IsSpectating() and name ) then
+			local overrideName = C_Commentator.GetPlayerOverrideName(name);
+			if overrideName then
+				name = overrideName;
+			end
+		end
+
+		frame.name:SetText(name);
 
 		if ( CompactUnitFrame_IsTapDenied(frame) ) then
 			-- Use grey if not a player and can't get tap on unit
@@ -1248,7 +1259,8 @@ function CompactUnitFrame_UtilSetDebuff(debuffFrame, unit, index, filter, isBoss
 
 	debuffFrame.isBossBuff = isBossBuff;
 	if ( isBossAura ) then
-		debuffFrame:SetSize(debuffFrame.baseSize + BOSS_DEBUFF_SIZE_INCREASE, debuffFrame.baseSize + BOSS_DEBUFF_SIZE_INCREASE);
+		local size = min(debuffFrame.baseSize + BOSS_DEBUFF_SIZE_INCREASE, debuffFrame.maxHeight);
+		debuffFrame:SetSize(size, size);
 	else
 		debuffFrame:SetSize(debuffFrame.baseSize, debuffFrame.baseSize);
 	end
@@ -1434,16 +1446,7 @@ function DefaultCompactUnitFrameSetup(frame)
 	CompactUnitFrame_SetMaxDebuffs(frame, 3);
 	CompactUnitFrame_SetMaxDispelDebuffs(frame, 3);
 	
-	local auraPos, auraOffset;
-	if ( options.displayPowerBar ) then
-		auraPos = "TOP";
-		auraOffset = 2 + powerBarUsedHeight + buffSize;
-	else
-		auraPos = "BOTTOM";
-		auraOffset = 2 + powerBarUsedHeight;
-	end
-	
-	local buffPos, buffRelativePoint, buffOffset = auraPos.."RIGHT", auraPos.."LEFT", auraOffset;
+	local buffPos, buffRelativePoint, buffOffset = "BOTTOMRIGHT", "BOTTOMLEFT", CUF_AURA_BOTTOM_OFFSET + powerBarUsedHeight;
 	frame.buffFrames[1]:ClearAllPoints();
 	frame.buffFrames[1]:SetPoint(buffPos, frame, "BOTTOMRIGHT", -3, buffOffset);
 	for i=1, #frame.buffFrames do
@@ -1454,7 +1457,7 @@ function DefaultCompactUnitFrameSetup(frame)
 		frame.buffFrames[i]:SetSize(buffSize, buffSize);
 	end
 	
-	local debuffPos, debuffRelativePoint, debuffOffset = auraPos.."LEFT", auraPos.."RIGHT", auraOffset;
+	local debuffPos, debuffRelativePoint, debuffOffset = "BOTTOMLEFT", "BOTTOMRIGHT", CUF_AURA_BOTTOM_OFFSET + powerBarUsedHeight;
 	frame.debuffFrames[1]:ClearAllPoints();
 	frame.debuffFrames[1]:SetPoint(debuffPos, frame, "BOTTOMLEFT", 3, debuffOffset);
 	for i=1, #frame.debuffFrames do
@@ -1463,6 +1466,7 @@ function DefaultCompactUnitFrameSetup(frame)
 			frame.debuffFrames[i]:SetPoint(debuffPos, frame.debuffFrames[i - 1], debuffRelativePoint, 0, 0);
 		end
 		frame.debuffFrames[i].baseSize = buffSize;
+		frame.debuffFrames[i].maxHeight = options.height - powerBarUsedHeight - CUF_AURA_BOTTOM_OFFSET - CUF_NAME_SECTION_SIZE;
 		--frame.debuffFrames[i]:SetSize(11, 11);
 	end
 	
@@ -1644,6 +1648,7 @@ function DefaultCompactMiniFrameSetup(frame)
 end
 
 DefaultCompactNamePlateFriendlyFrameOptions = {
+	useClassColors = true,
 	displaySelectionHighlight = true,
 	displayAggroHighlight = false,
 	displayName = true,
@@ -1787,6 +1792,8 @@ function DefaultCompactNamePlateFrameSetupInternal(frame, setupOptions, frameOpt
 			frame.name:SetFontObject(SystemFont_NamePlate);
 		end
 	end
+
+	frame.healthBar:SetShown(not setupOptions.hideHealthbar);
 
 	frame.castBar.BorderShield:SetSize(setupOptions.castBarShieldWidth, setupOptions.castBarShieldHeight);
 
