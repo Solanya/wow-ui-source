@@ -194,7 +194,7 @@ GlueDialogTypes["CONFIRM_PAID_SERVICE"] = {
 	OnAccept = function()
 		-- need to get desired faction in case of pandaren doing faction change to another pandaren
 		-- this will be nil in any other case
-		CreateCharacter(CharacterCreateNameEdit:GetText(), PandarenFactionButtons_GetSelectedFaction());
+		C_CharacterCreation.CreateCharacter(CharacterCreateNameEdit:GetText(), PandarenFactionButtons_GetSelectedFaction());
 	end,
 }
 
@@ -239,7 +239,7 @@ GlueDialogTypes["CHARACTER_BOOST_NO_CHARACTERS_WARNING"] = {
 
 	OnAccept = function ()
 		CharSelectServicesFlowFrame:Hide();
-		CharacterSelect_CreateNewCharacter(LE_CHARACTER_CREATE_TYPE_NORMAL, true);
+		CharacterSelect_CreateNewCharacter(Enum.CharacterCreateType.Normal, true);
 	end,
 
 	OnCancel = function ()
@@ -286,6 +286,19 @@ GlueDialogTypes["BOOST_NOT_RECOMMEND_SPEC_WARNING"] = {
 		local master = CharacterServicesMaster;
 		master.flow:Rewind(master);
 	end,
+}
+
+GlueDialogTypes["BOOST_ALLIED_RACE_HERITAGE_ARMOR_WARNING"] = {
+	button1 = CONTINUE,
+	button2 = CANCEL,
+	html = 1,
+	OnAccept = function()
+		CharacterServicesMaster_Advance();
+	end,
+	OnCancel = function()
+		local master = CharacterServicesMaster;
+		master.flow:Restart(master);
+	end,	
 }
 
 GlueDialogTypes["LEGION_PURCHASE_READY"] = {
@@ -405,9 +418,13 @@ function GlueDialog_Show(which, text, data)
 		GlueDialogButton2:Hide();
 		GlueDialogButton3:Hide();
 	end
+	
+	--Show/Hide the disable overlay on the rest of the screen
+	GlueDialog.Cover:SetShown(dialogInfo.cover);
 
 	-- Set the miscellaneous variables for the dialog
 	GlueDialog.which = which;
+	GlueDialog.timeleft = dialogInfo.timeout or 0;
 	GlueDialog.data = data;
 
 	-- Show or hide the alert icon
@@ -535,6 +552,28 @@ function GlueDialog_OnShow(self)
 	local OnShow = GlueDialogTypes[self.which].OnShow;
 	if ( OnShow ) then
 		OnShow();
+	end
+end
+
+function GlueDialog_OnUpdate(self, elapsed)
+	local which = self.which;
+	if ( self.timeleft > 0 ) then
+		local timeleft = self.timeleft - elapsed;
+		if ( timeleft <= 0 ) then
+			self.timeleft = 0;
+			local OnCancel = GlueDialogTypes[which].OnCancel;
+			if ( OnCancel ) then
+				OnCancel();
+			end
+			self:Hide();
+			return;
+		end
+		self.timeleft = timeleft;
+	end
+	
+	local OnUpdate = GlueDialogTypes[which].OnUpdate;
+	if ( OnUpdate ) then
+		OnUpdate(elapsed);
 	end
 end
 
