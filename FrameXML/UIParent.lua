@@ -63,6 +63,7 @@ UIPanelWindows["CinematicFrame"] =				{ area = "full",			pushable = 0, 		xoffset
 UIPanelWindows["ChatConfigFrame"] =				{ area = "center",			pushable = 0, 		xoffset = -16, 		yoffset = 12,	whileDead = 1 };
 UIPanelWindows["WorldStateScoreFrame"] =		{ area = "center",			pushable = 0, 		xoffset = -16, 		yoffset = 12,	whileDead = 1 };
 UIPanelWindows["QuestChoiceFrame"] =			{ area = "center",			pushable = 0, 		xoffset = -16, 		yoffset = 12,	whileDead = 0, allowOtherPanels = 1 };
+UIPanelWindows["WarboardQuestChoiceFrame"] =	{ area = "center",			pushable = 0, 		xoffset = -16, 		yoffset = 12,	whileDead = 0, allowOtherPanels = 1 };
 UIPanelWindows["GarrisonBuildingFrame"] =		{ area = "center",			pushable = 0,		whileDead = 1, 		width = 1002, 	allowOtherPanels = 1};
 UIPanelWindows["GarrisonMissionFrame"] =		{ area = "center",			pushable = 0,		whileDead = 1, 		checkFit = 1,	allowOtherPanels = 1, extraWidth = 20,	extraHeight = 100 };
 UIPanelWindows["GarrisonShipyardFrame"] =		{ area = "center",			pushable = 0,		whileDead = 1, 		checkFit = 1,	allowOtherPanels = 1, extraWidth = 20,	extraHeight = 100 };
@@ -254,6 +255,7 @@ function UIParent_OnLoad(self)
 	self:RegisterEvent("BAG_OVERFLOW_WITH_FULL_INVENTORY");
 	self:RegisterEvent("LOADING_SCREEN_ENABLED");
 	self:RegisterEvent("LOADING_SCREEN_DISABLED");
+	self:RegisterEvent("SPELL_NAME_UPDATE");
 
 	-- Events for auction UI handling
 	self:RegisterEvent("AUCTION_HOUSE_SHOW");
@@ -581,6 +583,10 @@ end
 
 function QuestChoice_LoadUI()
 	UIParentLoadAddOn("Blizzard_QuestChoice");
+end
+
+function WarboardQuestChoice_LoadUI()
+	UIParentLoadAddOn("Blizzard_WarboardUI");
 end
 
 function Store_LoadUI()
@@ -1001,7 +1007,7 @@ end
 
 -- UIParent_OnEvent --
 function UIParent_OnEvent(self, event, ...)
-	local arg1, arg2, arg3, arg4, arg5, arg6 = ...;
+	local arg1, arg2, arg3, arg4, arg5, arg6, arg7 = ...;
 	if ( event == "CURRENT_SPELL_CAST_CHANGED" ) then
 		if ( SpellCanTargetGarrisonFollower(0) or SpellCanTargetGarrisonFollowerAbility(0, 0) ) then
 
@@ -1348,7 +1354,7 @@ function UIParent_OnEvent(self, event, ...)
 			StaticPopup_Hide("CONFIRM_LEAVE_INSTANCE_PARTY");
 		end
 	elseif ( event == "MIRROR_TIMER_START" ) then
-		MirrorTimer_Show(arg1, arg2, arg3, arg4, arg5, arg6);
+		MirrorTimer_Show(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 	elseif ( event == "DUEL_REQUESTED" ) then
 		StaticPopup_Show("DUEL_REQUESTED", arg1);
 	elseif ( event == "DUEL_OUTOFBOUNDS" ) then
@@ -1702,7 +1708,12 @@ function UIParent_OnEvent(self, event, ...)
 		local info = ChatTypeInfo["SYSTEM"];
 		DEFAULT_CHAT_FRAME:AddMessage(BENCHMARK_TAXI_MODE_OFF, info.r, info.g, info.b, info.id);
 	elseif ( event == "LEVEL_GRANT_PROPOSED" ) then
-		StaticPopup_Show("LEVEL_GRANT_PROPOSED", arg1);
+		local isAlliedRace, hasHeritageArmorUnlocked = UnitAlliedRaceInfo("player");
+		if (isAlliedRace and not hasHeritageArmorUnlocked) then
+			StaticPopup_Show("LEVEL_GRANT_PROPOSED_ALLIED_RACE", arg1);
+		else
+			StaticPopup_Show("LEVEL_GRANT_PROPOSED", arg1);
+		end
 	elseif ( event == "CHAT_MSG_WHISPER" and arg6 == "GM" ) then	--GMChatUI
 		GMChatFrame_LoadUI(event, ...);
 	elseif ( event == "WOW_MOUSE_NOT_FOUND" ) then
@@ -1849,9 +1860,13 @@ function UIParent_OnEvent(self, event, ...)
 	-- Quest Choice trigger event
 
 	elseif ( event == "QUEST_CHOICE_UPDATE" ) then
-		QuestChoice_LoadUI();
-		if ( QuestChoiceFrame_Show) then
-			QuestChoiceFrame_Show();
+		local uiTextureKitID = select(4, GetQuestChoiceInfo());
+		if (uiTextureKitID and uiTextureKitID ~= 0) then
+			WarboardQuestChoice_LoadUI();
+			WarboardQuestChoiceFrame:TryShow();
+		else
+			QuestChoice_LoadUI();
+			QuestChoiceFrame:TryShow();
 		end
 	elseif ( event == "LUA_WARNING" ) then
 		HandleLuaWarning(...);
@@ -1971,6 +1986,10 @@ function UIParent_OnEvent(self, event, ...)
 		local raceID = ...; 
 		AlliedRacesFrame:LoadRaceData(raceID);
 		ShowUIPanel(AlliedRacesFrame);
+	else
+		if (DeathRecapFrame) then
+			DeathRecapFrame_OnEvent(self, event, ...);
+		end
 	end
 end
 
@@ -4960,6 +4979,9 @@ function ShakeFrameRandom(frame, magnitude, duration, frequency)
 end
 
 function ShakeFrame(frame, shake, maximumDuration, frequency)
+	if ( frame.shakeTicker and not frame.shakeTicker:IsCancelled() )  then
+		return;
+	end
 	local point, relativeFrame, relativePoint, x, y = frame:GetPoint();
 	local shakeIndex = 1;
 	local endTime = GetTime() + maximumDuration;

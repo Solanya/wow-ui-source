@@ -143,7 +143,8 @@ retain("IsShiftKeyDown");
 retain("GetBindingFromClick");
 
 --For character services
-take("C_SharedCharacterServices");
+retain("C_SharedCharacterServices");
+retain("C_CharacterServices");
 retain("C_ClassTrial");
 
 --For secure transfer

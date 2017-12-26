@@ -266,14 +266,15 @@ function WardrobeTransmogFrame_UpdateWeaponModel(slot)
 	local appearanceSourceID = WardrobeTransmogFrame_GetDisplayedSource(weaponSlotButton);
 	if ( appearanceSourceID ~= NO_TRANSMOG_SOURCE_ID ) then
 		local illusionSourceID = WardrobeTransmogFrame_GetDisplayedSource(enchantSlotButton);
-		local categoryID = C_TransmogCollection.GetAppearanceSourceInfo(appearanceSourceID);
-		-- don't specify a slot for ranged weapons
-		if ( WardrobeUtils_IsCategoryRanged(categoryID) ) then
-			slot = nil;
-		end
 		-- check existing equipped on model. we don't want to update it if the same because the hand will open/close.
 		local existingAppearanceSourceID, existingIllustionSourceID = WardrobeTransmogFrame.Model:GetSlotTransmogSources(slotID);
 		if ( existingAppearanceSourceID ~= appearanceSourceID or existingIllustionSourceID ~= illusionSourceID ) then
+			-- don't specify a slot when applying or removing ranged weapons because of bows
+			local categoryID = C_TransmogCollection.GetAppearanceSourceInfo(appearanceSourceID);
+			local existingCategoryID = C_TransmogCollection.GetAppearanceSourceInfo(existingAppearanceSourceID);
+			if ( WardrobeUtils_IsCategoryRanged(categoryID) or WardrobeUtils_IsCategoryRanged(existingCategoryID) ) then
+				slot = nil;
+			end
 			WardrobeTransmogFrame.Model:TryOn(appearanceSourceID, slot, illusionSourceID);
 		end
 	end	
@@ -2244,6 +2245,12 @@ function WardrobeCollectionFrame_SetAppearanceTooltip(contentFrame, sources, pri
 			GameTooltip:AddLine(useError, RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b, true);
 		elseif ( not WardrobeFrame_IsAtTransmogrifier() ) then
 			GameTooltip:AddLine(WARDROBE_TOOLTIP_TRANSMOGRIFIER, GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b, 1, 1);
+		end
+		if ( not useError ) then
+			local holidayName = C_TransmogCollection.GetSourceRequiredHoliday(headerSourceID);
+			if ( holidayName ) then
+				GameTooltip:AddLine(TRANSMOG_APPEARANCE_USABLE_HOLIDAY:format(holidayName), LIGHTBLUE_FONT_COLOR.r, LIGHTBLUE_FONT_COLOR.g, LIGHTBLUE_FONT_COLOR.b, true);
+			end
 		end
 	end
 

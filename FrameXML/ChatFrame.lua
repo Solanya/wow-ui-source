@@ -652,6 +652,14 @@ ICON_TAG_LIST =
  	[strlower(ICON_TAG_RAID_TARGET_SKULL1)] = 8,
  	[strlower(ICON_TAG_RAID_TARGET_SKULL2)] = 8,
 	[strlower(ICON_TAG_RAID_TARGET_SKULL3)] = 8,
+	[strlower(RAID_TARGET_1)] = 1,
+	[strlower(RAID_TARGET_2)] = 2,
+	[strlower(RAID_TARGET_3)] = 3,
+	[strlower(RAID_TARGET_4)] = 4,
+	[strlower(RAID_TARGET_5)] = 5,
+	[strlower(RAID_TARGET_6)] = 6,
+	[strlower(RAID_TARGET_7)] = 7,
+	[strlower(RAID_TARGET_8)] = 8,
 }
 
 GROUP_TAG_LIST =
@@ -707,6 +715,7 @@ local CastSequenceFreeList = {};
 local function CreateCanonicalActions(entry, ...)
 	entry.spells = {};
 	entry.spellNames = {};
+	entry.spellID = {};
 	entry.items = {};
 	local count = 0;
 	for i=1, select("#", ...) do
@@ -715,8 +724,10 @@ local function CreateCanonicalActions(entry, ...)
 			count = count + 1;
 			if ( GetItemInfo(action) or select(3, SecureCmdItemParse(action)) ) then
 				entry.items[count] = action;
-				entry.spells[count] = strlower(GetItemSpell(action) or "");
+				local spellName, _, spellID = GetItemSpell(action);
+				entry.spells[count] = strlower(spellName or "");
 				entry.spellNames[count] = entry.spells[count];
+				entry.spellID[count] = spellID;
 			else
 				entry.spells[count] = action;
 				entry.spellNames[count] = gsub(action, "!*(.*)", "%1");
@@ -750,6 +761,17 @@ local function CastSequenceManager_OnEvent(self, event, ...)
 	if ( event == "PLAYER_DEAD" ) then
 		for sequence, entry in pairs(CastSequenceTable) do
 			ResetCastSequence(sequence, entry);
+		end
+		return;
+	end
+
+	if ( event == "SPELL_NAME_UPDATE" ) then
+		local spellID, spellName = ...;
+		for sequence, entry in pairs(CastSequenceTable) do
+			if entry.spellID[entry.index] == spellID then
+				entry.spells[entry.index] = strlower(spellName);
+				entry.spellNames[entry.index] = entry.spells[entry.index];
+			end
 		end
 		return;
 	end
@@ -839,6 +861,7 @@ local function ExecuteCastSequence(sequence, target)
 		CastSequenceManager:RegisterEvent("UNIT_SPELLCAST_FAILED_QUIET");
 		CastSequenceManager:RegisterEvent("PLAYER_TARGET_CHANGED");
 		CastSequenceManager:RegisterEvent("PLAYER_REGEN_ENABLED");
+		CastSequenceManager:RegisterEvent("SPELL_NAME_UPDATE");
 		CastSequenceManager:SetScript("OnEvent", CastSequenceManager_OnEvent);
 		CastSequenceManager:SetScript("OnUpdate", CastSequenceManager_OnUpdate);
 	end
@@ -882,12 +905,15 @@ local function ExecuteCastSequence(sequence, target)
 	if ( item ) then
 		local name, bag, slot = SecureCmdItemParse(item);
 		if ( slot ) then
+			local spellName, spellID;
 			if ( name ) then
-				spell = strlower(GetItemSpell(name) or "");
+				spellName, _, spellID = GetItemSpell(name);
+				spell = strlower(spellName or "");
 			else
 				spell = "";
 			end
 			entry.spellNames[entry.index] = spell;
+			entry.spellID[entry.index] = spellID;
 		end
 		if ( IsEquippableItem(name) and not IsEquippedItem(name) ) then
 			EquipItemByName(name);
@@ -2991,6 +3017,54 @@ function ChatFrame_GetMobileEmbeddedTexture(r, g, b)
 	return format("|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat:14:14:0:0:16:16:0:16:0:16:%d:%d:%d|t", r, g, b);
 end
 
+function ChatFrame_CanChatGroupPerformExpressionExpansion(chatGroup)
+	if chatGroup == "RAID" then
+		return true;
+	end
+
+	if chatGroup == "INSTANCE_CHAT" then
+		return IsInRaid(LE_PARTY_CATEGORY_INSTANCE);
+	end
+
+	return false;
+end
+
+do
+	local seenGroups = {};
+	function ChatFrame_ReplaceIconAndGroupExpressions(message, noIconReplacement, noGroupReplacement)
+		wipe(seenGroups);
+
+		for tag in string.gmatch(message, "%b{}") do
+			local term = strlower(string.gsub(tag, "[{}]", ""));
+			if ( not noIconReplacement and ICON_TAG_LIST[term] and ICON_LIST[ICON_TAG_LIST[term]] ) then
+				message = string.gsub(message, tag, ICON_LIST[ICON_TAG_LIST[term]] .. "0|t");
+			elseif ( not noGroupReplacement and GROUP_TAG_LIST[term] ) then
+				local groupIndex = GROUP_TAG_LIST[term];
+				if not seenGroups[groupIndex] then
+					seenGroups[groupIndex] = true;
+					local groupList = "[";
+					for i=1, GetNumGroupMembers() do
+						local name, rank, subgroup, level, class, classFileName = GetRaidRosterInfo(i);
+						if ( name and subgroup == groupIndex ) then
+							local classColorTable = RAID_CLASS_COLORS[classFileName];
+							if ( classColorTable ) then
+								name = string.format("\124cff%.2x%.2x%.2x%s\124r", classColorTable.r*255, classColorTable.g*255, classColorTable.b*255, name);
+							end
+							groupList = groupList..(groupList == "[" and "" or PLAYER_LIST_DELIMITER)..name;
+						end
+					end
+					if groupList ~= "[" then
+						groupList = groupList.."]";
+						message = string.gsub(message, tag, groupList, 1);
+					end
+				end
+			end
+		end
+
+		return message;
+	end
+end
+
 function ChatFrame_MessageEventHandler(self, event, ...)
 	if ( strsub(event, 1, 8) == "CHAT_MSG" ) then
 		local arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17 = ...;
@@ -3275,28 +3349,7 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 			end
 
 			-- Search for icon links and replace them with texture links.
-			for tag in string.gmatch(arg1, "%b{}") do
-				local term = strlower(string.gsub(tag, "[{}]", ""));
-				-- If arg17 is true, don't convert to raid icons
-				if ( not arg17 and ICON_TAG_LIST[term] and ICON_LIST[ICON_TAG_LIST[term]] ) then
-					arg1 = string.gsub(arg1, tag, ICON_LIST[ICON_TAG_LIST[term]] .. "0|t");
-				elseif ( GROUP_TAG_LIST[term] ) then
-					local groupIndex = GROUP_TAG_LIST[term];
-					local groupList = "[";
-					for i=1, GetNumGroupMembers() do
-						local name, rank, subgroup, level, class, classFileName = GetRaidRosterInfo(i);
-						if ( name and subgroup == groupIndex ) then
-							local classColorTable = RAID_CLASS_COLORS[classFileName];
-							if ( classColorTable ) then
-								name = string.format("\124cff%.2x%.2x%.2x%s\124r", classColorTable.r*255, classColorTable.g*255, classColorTable.b*255, name);
-							end
-							groupList = groupList..(groupList == "[" and "" or PLAYER_LIST_DELIMITER)..name;
-						end
-					end
-					groupList = groupList.."]";
-					arg1 = string.gsub(arg1, tag, groupList);
-				end
-			end
+			arg1 = ChatFrame_ReplaceIconAndGroupExpressions(arg1, arg17, not ChatFrame_CanChatGroupPerformExpressionExpansion(chatGroup)); -- If arg17 is true, don't convert to raid icons
 
 			--Remove groups of many spaces
 			arg1 = RemoveExtraSpaces(arg1);

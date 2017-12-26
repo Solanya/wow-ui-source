@@ -265,16 +265,6 @@ GlueDialogTypes["CHARACTER_BOOST_FEATURE_RESTRICTED"] = {
 	escapeHides = true,
 };
 
-GlueDialogTypes["UNLOCK_REVOKED_UPGRADE_CHARACTER"] = {
-	button1 = YES,
-	button2 = NO,
-	escapeHides = true,
-
-	OnAccept = function ()
-		C_CharacterServices.RequestManualUnrevoke(GlueDialog.data);
-	end,
-}
-
 GlueDialogTypes["BOOST_NOT_RECOMMEND_SPEC_WARNING"] = {
 	text = BOOST_NOT_RECOMMEND_SPEC_WARNING,
 	button1 = OKAY,
@@ -293,7 +283,8 @@ GlueDialogTypes["BOOST_ALLIED_RACE_HERITAGE_ARMOR_WARNING"] = {
 	button2 = CANCEL,
 	html = 1,
 	OnAccept = function()
-		CharacterServicesMaster_Advance();
+		-- Character select auto advances to spec select.
+		CharacterServicesMaster_Update();
 	end,
 	OnCancel = function()
 		local master = CharacterServicesMaster;
