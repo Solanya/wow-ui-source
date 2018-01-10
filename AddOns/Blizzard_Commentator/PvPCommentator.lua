@@ -269,8 +269,6 @@ function PvPCommentatorMixin:SetDefaultCVars()
 	SetCVar("NamePlateVerticalScale", COMMENTATOR_NAMEPLATE_VERTICAL_SCALE);
 	SetCVar("nameplateSelectedScale", 1.5);
 	SetCVar("nameplateShowAll", 1);
-	
-	SetCVar("nameplateSelectedScale", 1.5);
 
 	-- See InterfaceOptionsNPCNamesDropDown, we want these all off.
 	SetCVar("UnitNameFriendlySpecialNPCName", 0);
