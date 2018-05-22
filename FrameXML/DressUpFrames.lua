@@ -213,66 +213,6 @@ function DressUpOutfitMixin:LoadOutfit(outfitID)
 	DressUpSources(C_TransmogCollection.GetOutfitSources(outfitID))
 end
 
-function DressUpFrame_OnDressModel(self)
-	-- only want 1 update per frame
-	if ( not self.gotDressed ) then
-		self.gotDressed = true;
-		C_Timer.After(0, function() self.gotDressed = nil; DressUpFrameOutfitDropDown:UpdateSaveButton(); end);
-	end
-end
-
-function DressUpFrame_Show()
-	if ( not DressUpFrame:IsShown() or DressUpFrame.mode ~= "player") then
-		DressUpFrame.mode = "player";
-		DressUpFrame.ResetButton:Show();
-
-		local race, fileName = UnitRace("player");
-		SetDressUpBackground(DressUpFrame, fileName);
-
-		ShowUIPanel(DressUpFrame);
-		DressUpModel:SetUnit("player");
-	end
-end
-
-function DressUpSources(appearanceSources, mainHandEnchant, offHandEnchant)
-	if ( not appearanceSources ) then
-		return true;
-	end
-
-	DressUpFrame_Show();
-	local mainHandSlotID = GetInventorySlotInfo("MAINHANDSLOT");
-	local secondaryHandSlotID = GetInventorySlotInfo("SECONDARYHANDSLOT");
-	for i = 1, #appearanceSources do
-		if ( i ~= mainHandSlotID and i ~= secondaryHandSlotID ) then
-			if ( appearanceSources[i] and appearanceSources[i] ~= NO_TRANSMOG_SOURCE_ID ) then
-				DressUpModel:TryOn(appearanceSources[i]);
-			end
-		end
-	end
-
-	DressUpModel:TryOn(appearanceSources[mainHandSlotID], "MAINHANDSLOT", mainHandEnchant);
-	DressUpModel:TryOn(appearanceSources[secondaryHandSlotID], "SECONDARYHANDSLOT", offHandEnchant);
-end
-
-DressUpOutfitMixin = { };
-
-function DressUpOutfitMixin:GetSlotSourceID(slot, transmogType)
-	local slotID = GetInventorySlotInfo(slot);
-	local appearanceSourceID, illusionSourceID = DressUpModel:GetSlotTransmogSources(slotID);
-	if ( transmogType == LE_TRANSMOG_TYPE_APPEARANCE ) then
-		return appearanceSourceID;
-	elseif ( transmogType == LE_TRANSMOG_TYPE_ILLUSION ) then
-		return illusionSourceID;
-	end
-end
-
-function DressUpOutfitMixin:LoadOutfit(outfitID)
-	if ( not outfitID ) then
-		return;
-	end
-	DressUpSources(C_TransmogCollection.GetOutfitSources(outfitID))
-end
-
 function SideDressUpFrame_OnShow(self)
 	SetUIPanelAttribute(self.parentFrame, "width", self.openWidth);
 	UpdateUIPanelPositions(self.parentFrame);
