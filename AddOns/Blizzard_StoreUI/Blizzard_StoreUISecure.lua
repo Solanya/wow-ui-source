@@ -1370,6 +1370,10 @@ local vasErrorData = {
 	[Enum.VasError.CharacterTransferTooSoon] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_FACTION_CHANGE_TOO_SOON,
 	},
+	[Enum.VasError.CharLocked] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_CHARACTER_LOCKED,
+		notUserFixable = true,
+	},
 	[Enum.VasError.TooMuchMoneyForLevel] = {
 		msg = function(character)
 			local str = "";
@@ -1393,6 +1397,10 @@ local vasErrorData = {
 	},
 	[Enum.VasError.HasAuctions] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_HAS_AUCTIONS,
+	},
+	[Enum.VasError.LastSaveTooRecent] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_LAST_SAVE_TOO_RECENT,
+		notUserFixable = true,
 	},
 	[Enum.VasError.NameNotAvailable] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_NAME_NOT_AVAILABLE,
@@ -1430,19 +1438,11 @@ local vasErrorData = {
 	[Enum.VasError.HasHeirloom] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_HAS_HEIRLOOM,
 	},
-	[Enum.VasError.CharLocked] = {
-		msg = BLIZZARD_STORE_VAS_ERROR_CHARACTER_LOCKED,
-		notUserFixable = true,
-	},
-	[Enum.VasError.LastSaveTooRecent] = {
-		msg = BLIZZARD_STORE_VAS_ERROR_LAST_SAVE_TOO_RECENT,
-		notUserFixable = true,
+	[Enum.VasError.LastSaveTooDistant] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_LAST_SAVE_TOO_DISTANT,
 	},
 	[Enum.VasError.HasCagedBattlePet] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_HAS_CAGED_BATTLE_PET,
-	},
-	[Enum.VasError.LastSaveTooDistant] = {
-		msg = BLIZZARD_STORE_VAS_ERROR_LAST_SAVE_TOO_DISTANT,
 	},
 	[Enum.VasError.BoostedTooRecently] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_BOOSTED_TOO_RECENTLY,
@@ -5201,9 +5201,7 @@ function StoreAutoCompleteIncrementSelection(self)
 		VAS_AUTO_COMPLETE_SELECTION = 1;
 	end
 
-	local frame = self:GetParent();
-
-	StoreUpdateAutoComplete(frame, frame:GetText(), frame:GetCursorPosition());
+	StoreUpdateAutoComplete(self, self:GetText(), self:GetCursorPosition());
 end
 
 function StoreAutoCompleteDecrementSelection(self)
@@ -5214,9 +5212,7 @@ function StoreAutoCompleteDecrementSelection(self)
 			VAS_AUTO_COMPLETE_SELECTION = VAS_AUTO_COMPLETE_SELECTION - 1;
 		end
 
-		local frame = self:GetParent();
-
-		StoreUpdateAutoComplete(frame, frame:GetText(), frame:GetCursorPosition());
+		StoreUpdateAutoComplete(self, self:GetText(), self:GetCursorPosition());
 	end
 end
 
