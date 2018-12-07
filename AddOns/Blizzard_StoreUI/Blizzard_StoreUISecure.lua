@@ -37,7 +37,6 @@ local WasVeteran = false;
 local StoreFrameHasBeenShown = false;
 local CharacterWaitingOnGuildFollowInfo = nil;
 local RealmWaitingOnGuildMasterInfo = nil;
-local GuildFollowInfo = {};
 local GuildMasterInfo = {};
 local CharacterList = {};
 local GuildMemberAutoCompleteList;
@@ -227,6 +226,12 @@ Import("BLIZZARD_STORE_VAS_ERROR_BOOSTED_TOO_RECENTLY");
 Import("BLIZZARD_STORE_VAS_ERROR_NOT_GUILD_MASTER");
 Import("BLIZZARD_STORE_VAS_ERROR_NOT_IN_GUILD");
 Import("BLIZZARD_STORE_VAS_ERROR_NEW_LEADER_INVALID");
+Import("BLIZZARD_STORE_VAS_ERROR_AUTHENTICATOR_INSUFFICIENT");
+Import("BLIZZARD_STORE_VAS_ERROR_ALREADY_RENAME_FLAGGED");
+Import("BLIZZARD_STORE_VAS_ERROR_GM_SENORITY_INSUFFICIENT");
+Import("BLIZZARD_STORE_VAS_ERROR_OPERATION_ALREADY_IN_PROGRESS");
+Import("BLIZZARD_STORE_VAS_ERROR_LOCKED_FOR_VAS");
+Import("BLIZZARD_STORE_VAS_ERROR_MOVE_IN_PROGRESS");
 Import("BLIZZARD_STORE_VAS_ERROR_OTHER");
 Import("BLIZZARD_STORE_VAS_ERROR_LABEL");
 Import("BLIZZARD_STORE_LEGION_PURCHASE_READY");
@@ -1349,6 +1354,12 @@ local vasErrorData = {
 	[Enum.VasError.LowerBoxLevel] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_LOWER_BOX_LEVEL,
 	},
+	[Enum.VasError.OperationAlreadyInProgress] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_OPERATION_ALREADY_IN_PROGRESS,
+	},
+	[Enum.VasError.LockedForVas] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_LOCKED_FOR_VAS,
+	},
 	[Enum.VasError.RealmNotEligible] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_REALM_NOT_ELIGIBLE,
 	},
@@ -1363,6 +1374,9 @@ local vasErrorData = {
 	},
 	[Enum.VasError.HasMail] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_HAS_MAIL,
+	},
+	[Enum.VasError.MoveInProgress] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_MOVE_IN_PROGRESS,
 	},
 	[Enum.VasError.UnderMinLevelReq] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_UNDER_MIN_LEVEL_REQ,
@@ -1408,6 +1422,9 @@ local vasErrorData = {
 	[Enum.VasError.LastRenameTooRecent] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_LAST_RENAME_TOO_RECENT,
 	},
+	[Enum.VasError.AlreadyRenameFlagged] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_ALREADY_RENAME_FLAGGED,
+	},
 	[Enum.VasError.CustomizeAlreadyRequested] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_CUSTOMIZE_ALREADY_REQUESTED,
 	},
@@ -1425,6 +1442,12 @@ local vasErrorData = {
 	},
 	[Enum.VasError.CharacterWithoutGuild] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_NOT_IN_GUILD,
+	},
+	[Enum.VasError.GmSeniorityInsufficient] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_GM_SENORITY_INSUFFICIENT,
+	},
+	[Enum.VasError.AuthenticatorInsufficient] = {
+		msg = BLIZZARD_STORE_VAS_ERROR_AUTHENTICATOR_INSUFFICIENT,
 	},
 	[Enum.VasError.IneligibleMapID] = {
 		msg = BLIZZARD_STORE_VAS_ERROR_INELIGIBLE_MAP_ID,
@@ -3043,18 +3066,6 @@ local function IsVasServiceTypeEligibleForGuildFollow(serviceType)
 			serviceType == Enum.VasServiceType.FactionTransfer;
 end
 
-local function GetGuildFollowInfoForCharacter(guid)
-	if not GuildFollowInfo[guid] then
-		GuildFollowInfo[guid] = C_StoreSecure.GetVASGuildFollowInfoForCharacterByGUID(guid);
-	end
-
-	return GuildFollowInfo[guid];
-end
-
-local function UpdateGuildFollowInfoForCharacter(guid, guildFollowInfo)
-	GuildFollowInfo[guid] = guildFollowInfo;
-end
-
 local function GetCharactersForSelectedRealm()
 	return C_StoreSecure.GetCharactersForRealm(SelectedRealm.virtualRealmAddress, IsGuildVasServiceType(VASServiceType));
 end
@@ -3674,10 +3685,9 @@ function StoreVASValidationFrame_OnEvent(self, event, ...)
 		self:Hide();
 	elseif ( event == "STORE_GUILD_FOLLOW_INFO_RECEIVED" ) then
 		local characterGuid, guildFollowInfo = ...;
-		UpdateGuildFollowInfoForCharacter(characterGuid, guildFollowInfo);
 		if CharacterWaitingOnGuildFollowInfo == characterGuid then 
 			CharacterWaitingOnGuildFollowInfo = nil;
-			VASCharacterSelectionCharacterSelector_Callback(SelectedCharacter);
+			VASCharacterSelectionCharacterSelector_Callback(SelectedCharacter, guildFollowInfo);
 		end
 	elseif ( event == "STORE_GUILD_MASTER_INFO_RECEIVED" ) then
 		local realmAddress = ...;
@@ -4847,7 +4857,7 @@ local function UpdateFollowGuildCheckbox(self, faction, guildFollowInfo)
 	end
 end
 
-function VASCharacterSelectionCharacterSelector_Callback(value)
+function VASCharacterSelectionCharacterSelector_Callback(value, guildFollowInfo)
 	SelectedCharacter = value;
 	GuildMemberAutoCompleteList = nil;
 	GuildMemberNameToGuid = {};
@@ -4859,10 +4869,7 @@ function VASCharacterSelectionCharacterSelector_Callback(value)
 		level = 1;
 	end
 
-	local guildFollowInfo;
 	if IsVasServiceTypeEligibleForGuildFollow(VASServiceType) then
-		guildFollowInfo = GetGuildFollowInfoForCharacter(character.guid);
-
 		if not guildFollowInfo then
 			if CharacterWaitingOnGuildFollowInfo ~= character.guid then
 				-- wait for STORE_GUILD_FOLLOW_INFO_RECEIVED event
@@ -5235,9 +5242,27 @@ local function PlayCheckboxSound(self)
 	PlaySound(sound);
 end
 
+function VASCharacterSelection_NewCharacterName_OnTextChanged(self)
+	self:GetParent().ValidationDescription:Hide();
+
+	local character = CharacterList[SelectedCharacter];
+
+	local newNameText = self:GetText();
+	local enabled = newNameText ~= "" and newNameText ~= character.name;
+
+	self:GetParent().ContinueButton:SetEnabled(enabled);
+end
+
 function VASCharacterSelection_NewGuildName_OnTextChanged(self)
 	self:GetParent().ValidationDescription:Hide();
-	self:GetParent().ContinueButton:SetEnabled(self:GetText() ~= "");
+
+	local character = CharacterList[SelectedCharacter];
+	local guildMasterInfo = GetGuildMasterInfoForCharacter(character.guid);
+
+	local newNameText = self:GetText();
+	local enabled = newNameText ~= "" and newNameText ~= guildMasterInfo.guildName;
+
+	self:GetParent().ContinueButton:SetEnabled(enabled);
 end
 
 function RenameGuildCheckbox_OnClick(self)
